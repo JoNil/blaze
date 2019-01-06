@@ -98,7 +98,10 @@ impl Mailbox {
             return Err(String::from("Failed to open /dev/vcio").into());
         }
 
-        Ok(Mailbox { fd: fd, _marker: PhantomData })
+        Ok(Mailbox {
+            fd: fd,
+            _marker: PhantomData,
+        })
     }
 
     #[cfg(unix)]

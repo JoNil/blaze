@@ -12,7 +12,6 @@ pub struct Framebuffer {
 
 impl Framebuffer {
     pub fn new(mb: &Mailbox) -> Result<Framebuffer, Box<dyn Error>> {
-        
         let mut message: [u32; 35] = [
             35 * 4,
             MBOX_REQUEST,
@@ -67,7 +66,7 @@ impl Framebuffer {
             height: height,
             pitch: pitch,
             base_address: address as *mut _,
-            current_address: (address + height*pitch) as *mut _,
+            current_address: (address + height * pitch) as *mut _,
         })
     }
 
@@ -75,14 +74,14 @@ impl Framebuffer {
         let mut y_offset = 0;
 
         if self.current_address == self.base_address {
-            self.current_address = (self.base_address as u32 + self.height*self.pitch) as *mut _;
+            self.current_address = (self.base_address as u32 + self.height * self.pitch) as *mut _;
         } else {
             y_offset = self.height;
             self.current_address = self.base_address;
         }
 
         let mut message: [u32; 8] = [
-            8*4,
+            8 * 4,
             MBOX_REQUEST,
             MBOX_TAG_SET_VIRTUAL_OFFSET,
             8,
@@ -96,13 +95,11 @@ impl Framebuffer {
     }
 
     pub fn close(&self, mb: &Mailbox) {
-
-        let mut message: [u32; 7] = [
-            7*4,
+        let mut message: [u32; 6] = [
+            6 * 4,
             MBOX_REQUEST,
             MBOX_TAG_RELEASE_BUFFER,
-            4,
-            4,
+            0,
             0,
             MBOX_TAG_LAST,
         ];
