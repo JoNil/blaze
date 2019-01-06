@@ -2,6 +2,8 @@ mod vc;
 
 use crate::vc::Vc;
 use std::error::Error;
+use std::thread;
+use std::time;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut vc = Vc::new()?;
@@ -10,6 +12,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut y: i32 = 100;
     let mut dx: i32 = 1;
     let mut dy: i32 = 1;
+
+    let mut last = time::Instant::now();
+    let mut measure_time = 0;
+    let mut average_frame_time = 0.0;
 
     loop {
         x += dx;
@@ -35,8 +41,25 @@ fn main() -> Result<(), Box<dyn Error>> {
             y = 100;
         }
 
+        vc.fb.clear();
         vc.fb.draw(x as u32, y as u32);
+        vc.fb.swap(&vc.mb);
 
-        vc.fb.swap(&vc.mb)
+        let frame_time = {
+            let mut now = time::Instant::now();
+            let frame_duration = now.duration_since(last);
+            last = now;
+            frame_duration.as_secs() as f32 + frame_duration.subsec_nanos() as f32 * 1e-9
+        };
+        
+        measure_time += 1;
+        average_frame_time = average_frame_time * 0.95 + frame_time * 0.05;
+
+        if measure_time == 100 {
+            measure_time = 0;
+            println!("{}", average_frame_time);
+        }
+
+        //thread::sleep(time::Duration::from_millis(10));
     }
 }

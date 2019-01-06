@@ -18,9 +18,3 @@ impl Vc {
         Ok(Vc { mb: mb, fb: fb })
     }
 }
-
-impl Drop for Vc {
-    fn drop(&mut self) {
-        self.fb.close(&mut self.mb);
-    }
-}

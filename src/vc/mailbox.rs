@@ -93,7 +93,7 @@ pub struct Mailbox {
 
 impl Mailbox {
     pub fn new() -> Result<Mailbox, Box<dyn Error>> {
-        let fd = unsafe { libc::open("/dev/vcio\0" as *const _ as *const _, 0) };
+        let fd = unsafe { libc::open(b"/dev/vcio\0" as *const _ as *const _, 0) };
         if fd < 0 {
             return Err(String::from("Failed to open /dev/vcio").into());
         }
