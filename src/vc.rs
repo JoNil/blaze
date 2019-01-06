@@ -6,8 +6,8 @@ use self::mailbox::Mailbox;
 use std::error::Error;
 
 pub struct Vc {
-    mb: Mailbox,
-    fb: Framebuffer,
+    pub mb: Mailbox,
+    pub fb: Framebuffer,
 }
 
 impl Vc {

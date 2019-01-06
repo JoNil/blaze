@@ -70,6 +70,24 @@ impl Framebuffer {
         })
     }
 
+    pub fn draw(&mut self, x: u32, y: u32) {
+        const COLOR: u32 = 0xff00ff00;
+
+        println!("{:?}", self.current_address);
+
+        let ptr: *mut u8 =
+            unsafe { (self.current_address as *mut u8).offset((4 * x + self.pitch * y) as isize) };
+
+        for i in 0..100 {
+            let mut line: *mut u8 = unsafe { ptr.offset((self.pitch * i) as isize) };
+
+            for _j in 0..100 {
+                unsafe { *(line as *mut u32) = COLOR };
+                line = unsafe { line.offset(4) };
+            }
+        }
+    }
+
     pub fn swap(&mut self, mb: &Mailbox) {
         let mut y_offset = 0;
 
@@ -95,10 +113,12 @@ impl Framebuffer {
     }
 
     pub fn close(&self, mb: &Mailbox) {
-        let mut message: [u32; 6] = [
-            6 * 4,
+        let mut message: [u32; 8] = [
+            8 * 4,
             MBOX_REQUEST,
             MBOX_TAG_RELEASE_BUFFER,
+            8,
+            8,
             0,
             0,
             MBOX_TAG_LAST,
