@@ -1,4 +1,4 @@
-use super::mailbox::{constants::*, Mailbox, U32Aligned16};
+use super::mailbox::{constants::*, Mailbox};
 use libc;
 use std::error::Error;
 
@@ -13,54 +13,54 @@ pub struct Framebuffer {
 impl Framebuffer {
     pub fn new(mb: &Mailbox) -> Result<Framebuffer, Box<dyn Error>> {
         
-        let mut message: [U32Aligned16; 35] = [
-            U32Aligned16(35 * 4),
+        let mut message: [u32; 35] = [
+            35 * 4,
             MBOX_REQUEST,
             MBOX_TAG_SET_PHYSICAL_DISPLAY,
-            U32Aligned16(8),
-            U32Aligned16(8),
-            U32Aligned16(1280), // FrameBufferInfo.width
-            U32Aligned16(720),  // FrameBufferInfo.height
+            8,
+            8,
+            1280, // FrameBufferInfo.width
+            720,  // FrameBufferInfo.height
             MBOX_TAG_SET_VIRTUAL_BUFFER,
-            U32Aligned16(8),
-            U32Aligned16(8),
-            U32Aligned16(1280), // FrameBufferInfo.virtual_width
-            U32Aligned16(1440), // FrameBufferInfo.virtual_height
+            8,
+            8,
+            1280, // FrameBufferInfo.virtual_width
+            1440, // FrameBufferInfo.virtual_height
             MBOX_TAG_SET_VIRTUAL_OFFSET,
-            U32Aligned16(8),
-            U32Aligned16(8),
-            U32Aligned16(0), // FrameBufferInfo.x_offset
-            U32Aligned16(0), // FrameBufferInfo.y.offset
+            8,
+            8,
+            0, // FrameBufferInfo.x_offset
+            0, // FrameBufferInfo.y.offset
             MBOX_TAG_SET_DEPTH,
-            U32Aligned16(4),
-            U32Aligned16(4),
-            U32Aligned16(32), // FrameBufferInfo.depth
+            4,
+            4,
+            32, // FrameBufferInfo.depth
             MBOX_TAG_SET_PIXEL_ORDER,
-            U32Aligned16(4),
-            U32Aligned16(4),
-            U32Aligned16(0), //RGB, not BGR preferably
+            4,
+            4,
+            0, //RGB, not BGR preferably
             MBOX_TAG_ALLOCATE_BUFFER,
-            U32Aligned16(8),
-            U32Aligned16(8),
-            U32Aligned16(4096), // FrameBufferInfo.pointer
-            U32Aligned16(0),    // FrameBufferInfo.size
+            8,
+            8,
+            4096, // FrameBufferInfo.pointer
+            0,    // FrameBufferInfo.size
             MBOX_TAG_GET_PITCH,
-            U32Aligned16(4),
-            U32Aligned16(4),
-            U32Aligned16(0), // FrameBufferInfo.pitch
+            4,
+            4,
+            0, // FrameBufferInfo.pitch
             MBOX_TAG_LAST,
         ];
 
         mb.call(&mut message);
 
-        if message[28].0 == 0 {
+        if message[28] == 0 {
             return Err(String::from("Unable to allocate framebuffer").into());
         }
 
-        let width = message[5].0;
-        let height = message[6].0;
-        let pitch = message[33].0;
-        let address = message[28].0 & 0x3FFFFFFF;
+        let width = message[5];
+        let height = message[6];
+        let pitch = message[33];
+        let address = message[28] & 0x3FFFFFFF;
 
         Ok(Framebuffer {
             width: width,
@@ -81,14 +81,14 @@ impl Framebuffer {
             self.current_address = self.base_address;
         }
 
-        let mut message: [U32Aligned16; 8] = [
-            U32Aligned16(8*4),
+        let mut message: [u32; 8] = [
+            8*4,
             MBOX_REQUEST,
             MBOX_TAG_SET_VIRTUAL_OFFSET,
-            U32Aligned16(8),
-            U32Aligned16(8),
-            U32Aligned16(0),        // x offset
-            U32Aligned16(y_offset), // y offset
+            8,
+            8,
+            0,        // x offset
+            y_offset, // y offset
             MBOX_TAG_LAST,
         ];
 
@@ -97,13 +97,13 @@ impl Framebuffer {
 
     pub fn close(&self, mb: &Mailbox) {
 
-        let mut message: [U32Aligned16; 7] = [
-            U32Aligned16(7*4),
+        let mut message: [u32; 7] = [
+            7*4,
             MBOX_REQUEST,
             MBOX_TAG_RELEASE_BUFFER,
-            U32Aligned16(4),
-            U32Aligned16(4),
-            U32Aligned16(0),
+            4,
+            4,
+            0,
             MBOX_TAG_LAST,
         ];
 
