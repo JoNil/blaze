@@ -1,8 +1,10 @@
-use mailbox::Mailbox;
+mod vc;
+
+use crate::vc::Vc;
 use std::error::Error;
 
-mod mailbox;
+fn main() -> Result<(), Box<dyn Error>> {
+    let vc = Vc::new();
 
-fn main() -> Result<Mailbox, Box<dyn Error>> {
-    let mb = Mailbox::new();
+    Ok(())
 }
