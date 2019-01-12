@@ -1,2 +1,2 @@
-mod defs;
 mod command_builder;
+mod defs;
