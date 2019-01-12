@@ -7,8 +7,7 @@ const PAGE_SIZE: u32 = 4 * 1024;
 pub struct Allocation<'a> {
     pub address: *mut libc::c_void,
     pub size: u32,
-    _marker1: PhantomData<*mut libc::c_void>,
-    _marker2: PhantomData<&'a Memory>,
+    _marker: PhantomData<&'a Memory>,
 }
 
 impl<'a> Drop for Allocation<'a> {
@@ -42,7 +41,7 @@ impl Memory {
         })
     }
 
-    pub fn map_physical_memory<'a, 'b>(&'a mut self, address: u32, size: u32) -> Result<Allocation<'b>, Box<dyn Error>> 
+    pub fn map_physical_memory<'a, 'b>(&'a self, address: u32, size: u32) -> Result<Allocation<'b>, Box<dyn Error>> 
         where 'a: 'b {
         
         let offset = address % PAGE_SIZE;
@@ -66,8 +65,7 @@ impl Memory {
         Ok(Allocation {
             address: mapped_address,
             size: size,
-            _marker1: PhantomData,
-            _marker2: PhantomData,
+            _marker: PhantomData,
         })
     }
 }

@@ -1,6 +1,8 @@
+use lazy_static::lazy_static;
 use libc;
 use std::error::Error;
 use std::marker::PhantomData;
+use std::sync::Mutex;
 
 #[allow(dead_code)]
 pub mod constants {
@@ -86,13 +88,15 @@ pub mod constants {
 #[allow(dead_code)]
 const IOCTL_MBOX_PROPERTY: libc::c_ulong = 3221513216;
 
-pub struct Mailbox {
+struct Mailbox {
     fd: libc::c_int,
     _marker: PhantomData<*mut libc::c_void>,
 }
 
+unsafe impl Send for Mailbox {}
+
 impl Mailbox {
-    pub fn new() -> Result<Mailbox, Box<dyn Error>> {
+    fn new() -> Result<Mailbox, Box<dyn Error>> {
         let fd = unsafe { libc::open(b"/dev/vcio\0" as *const _ as *const _, 0) };
         if fd < 0 {
             return Err(String::from("Failed to open /dev/vcio").into());
@@ -105,7 +109,7 @@ impl Mailbox {
     }
 
     #[cfg(unix)]
-    pub fn call(&self, buf: &mut [u32]) {
+    fn call(&self, buf: &mut [u32]) {
         let ret = unsafe { libc::ioctl(self.fd, IOCTL_MBOX_PROPERTY, buf.as_mut_ptr()) };
 
         if ret < 0 {
@@ -114,7 +118,7 @@ impl Mailbox {
     }
 
     #[cfg(windows)]
-    pub fn call(&self, _buf: &mut [u32]) {}
+    fn call(&self, _buf: &mut [u32]) {}
 }
 
 impl Drop for Mailbox {
@@ -123,4 +127,14 @@ impl Drop for Mailbox {
             libc::close(self.fd);
         }
     }
+}
+
+lazy_static! {
+    static ref MAILBOX: Mutex<Mailbox> = {
+        Mutex::new(Mailbox::new().unwrap())
+    };
+}
+
+pub fn mailbox_call(buf: &mut [u32]) {
+    MAILBOX.lock().unwrap().call(buf)
 }

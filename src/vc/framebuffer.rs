@@ -1,4 +1,4 @@
-use super::mailbox::{constants::*, Mailbox};
+use super::mailbox::{constants::*, mailbox_call};
 use libc;
 use std::error::Error;
 
@@ -13,7 +13,7 @@ pub struct Framebuffer {
 }
 
 impl Framebuffer {
-    pub fn new(mb: &Mailbox) -> Result<Framebuffer, Box<dyn Error>> {
+    pub fn new() -> Result<Framebuffer, Box<dyn Error>> {
         let mut message: [u32; 35] = [
             35 * 4,
             MBOX_REQUEST,
@@ -52,7 +52,7 @@ impl Framebuffer {
             MBOX_TAG_LAST,
         ];
 
-        mb.call(&mut message);
+        mailbox_call(&mut message);
 
         if message[28] == 0 {
             return Err(String::from("Unable to allocate framebuffer").into());
@@ -142,7 +142,7 @@ impl Framebuffer {
         }
     }
 
-    pub fn swap(&mut self, mb: &Mailbox) {
+    pub fn swap(&mut self) {
         let mut y_offset = 0;
 
         if self.current_offset == 0 {
@@ -163,6 +163,6 @@ impl Framebuffer {
             MBOX_TAG_LAST,
         ];
 
-        mb.call(&mut message);
+        mailbox_call(&mut message);
     }
 }

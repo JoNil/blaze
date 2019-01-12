@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         vc.fb.clear();
         vc.fb.draw(x as u32, y as u32);
-        vc.fb.swap(&vc.mb);
+        vc.fb.swap();
 
         let frame_time = {
             let mut now = time::Instant::now();
