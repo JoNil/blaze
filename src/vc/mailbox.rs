@@ -130,9 +130,7 @@ impl Drop for Mailbox {
 }
 
 lazy_static! {
-    static ref MAILBOX: Mutex<Mailbox> = {
-        Mutex::new(Mailbox::new().unwrap())
-    };
+    static ref MAILBOX: Mutex<Mailbox> = { Mutex::new(Mailbox::new().unwrap()) };
 }
 
 pub fn mailbox_call(buf: &mut [u32]) {

@@ -1,6 +1,6 @@
+use libc;
 use std::error::Error;
 use std::marker::PhantomData;
-use libc;
 
 const PAGE_SIZE: u32 = 4 * 1024;
 
@@ -12,7 +12,7 @@ pub struct Allocation<'a> {
 
 impl<'a> Drop for Allocation<'a> {
     fn drop(&mut self) {
-         unsafe {
+        unsafe {
             libc::munmap(self.address, self.size as usize);
         }
     }
@@ -41,9 +41,14 @@ impl Memory {
         })
     }
 
-    pub fn map_physical_memory<'a, 'b>(&'a self, address: u32, size: u32) -> Result<Allocation<'b>, Box<dyn Error>> 
-        where 'a: 'b {
-        
+    pub fn map_physical_memory<'a, 'b>(
+        &'a self,
+        address: u32,
+        size: u32,
+    ) -> Result<Allocation<'b>, Box<dyn Error>>
+    where
+        'a: 'b,
+    {
         let offset = address % PAGE_SIZE;
         let base = address - offset;
 

@@ -3,8 +3,8 @@ mod mailbox;
 mod memory;
 
 use self::framebuffer::Framebuffer;
-use std::error::Error;
 use self::memory::Memory;
+use std::error::Error;
 
 pub struct Vc {
     pub mem: Memory,

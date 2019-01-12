@@ -1,5 +1,7 @@
+mod input;
 mod vc;
 
+use crate::input::Input;
 use crate::vc::Vc;
 use std::error::Error;
 use std::thread;
@@ -7,6 +9,7 @@ use std::time;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut vc = Vc::new()?;
+    let mut input = Input::new()?;
 
     let mut x: i32 = 100;
     let mut y: i32 = 100;
@@ -18,27 +21,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut average_frame_time = 0.0;
 
     loop {
-        x += dx;
-        y += dy;
+        input.poll();
 
-        if x > 200 {
-            dx = -1;
-            x = 200;
+        if input.left_down {
+            x -= 1;
         }
 
-        if x < 100 {
-            dx = 1;
-            x = 100;
+        if input.right_down {
+            x += 1;
         }
 
-        if y > 200 {
-            dy = -1;
-            y = 200;
+        if input.up_down {
+            y -= 1;
         }
 
-        if y < 100 {
-            dy = 1;
-            y = 100;
+        if input.down_down {
+            y += 1;
         }
 
         vc.fb.clear();
@@ -51,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             last = now;
             frame_duration.as_secs() as f32 + frame_duration.subsec_nanos() as f32 * 1e-9
         };
-        
+
         measure_time += 1;
         average_frame_time = average_frame_time * 0.95 + frame_time * 0.05;
 
