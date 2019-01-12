@@ -1,7 +1,7 @@
+use lazy_static::lazy_static;
 use libc;
 use std::error::Error;
 use std::marker::PhantomData;
-use lazy_static::lazy_static;
 use std::sync::Mutex;
 
 const PAGE_SIZE: u32 = 4 * 1024;
@@ -45,12 +45,7 @@ impl Memory {
         })
     }
 
-    fn map_physical_memory(
-        &self,
-        address: u32,
-        size: u32,
-    ) -> Result<Allocation, Box<dyn Error>>
-    {
+    fn map_physical_memory(&self, address: u32, size: u32) -> Result<Allocation, Box<dyn Error>> {
         let offset = address % PAGE_SIZE;
         let base = address - offset;
 
@@ -89,8 +84,6 @@ lazy_static! {
     static ref MEMORY: Mutex<Memory> = { Mutex::new(Memory::new().unwrap()) };
 }
 
-pub fn map_physical_memory(
-        address: u32,
-        size: u32) -> Result<Allocation, Box<dyn Error>> {
+pub fn map_physical_memory(address: u32, size: u32) -> Result<Allocation, Box<dyn Error>> {
     MEMORY.lock().unwrap().map_physical_memory(address, size)
 }

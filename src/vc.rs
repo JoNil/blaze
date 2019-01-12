@@ -1,6 +1,7 @@
 mod framebuffer;
 mod mailbox;
 mod memory;
+mod v3d;
 
 use self::framebuffer::Framebuffer;
 use std::error::Error;
@@ -11,7 +12,6 @@ pub struct Vc {
 
 impl Vc {
     pub fn new() -> Result<Vc, Box<dyn Error>> {
-        
         let fb = Framebuffer::new()?;
 
         Ok(Vc { fb })

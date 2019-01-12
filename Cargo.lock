@@ -33,6 +33,7 @@ dependencies = [
 name = "rpi_gpu_game"
 version = "0.1.0"
 dependencies = [
+ "byteorder 1.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.46 (registry+https://github.com/rust-lang/crates.io-index)",
  "structview 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",

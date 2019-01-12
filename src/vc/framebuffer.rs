@@ -1,5 +1,5 @@
 use super::mailbox::{constants::*, mailbox_call};
-use super::memory::{Allocation, map_physical_memory};
+use super::memory::{map_physical_memory, Allocation};
 use libc;
 use std::error::Error;
 
@@ -13,8 +13,7 @@ pub struct Framebuffer {
 }
 
 impl Framebuffer {
-    pub fn new() -> Result<Framebuffer, Box<dyn Error>>
-    {
+    pub fn new() -> Result<Framebuffer, Box<dyn Error>> {
         let mut message: [u32; 35] = [
             35 * 4,
             MBOX_REQUEST,
