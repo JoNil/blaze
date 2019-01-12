@@ -60,6 +60,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("{}", average_frame_time);
         }
 
-        //thread::sleep(time::Duration::from_millis(10));
+        thread::sleep(time::Duration::from_millis(10));
     }
 }
