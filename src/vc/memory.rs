@@ -1,19 +1,21 @@
 use libc;
 use std::error::Error;
 use std::marker::PhantomData;
+use lazy_static::lazy_static;
+use std::sync::Mutex;
 
 const PAGE_SIZE: u32 = 4 * 1024;
 
-pub struct Allocation<'a> {
+pub struct Allocation {
     pub address: *mut libc::c_void,
-    pub size: u32,
-    _marker: PhantomData<&'a Memory>,
+    base_address: *mut libc::c_void,
+    size: u32,
 }
 
-impl<'a> Drop for Allocation<'a> {
+impl Drop for Allocation {
     fn drop(&mut self) {
         unsafe {
-            libc::munmap(self.address, self.size as usize);
+            libc::munmap(self.base_address, self.size as usize);
         }
     }
 }
@@ -22,6 +24,8 @@ pub struct Memory {
     fd: libc::c_int,
     _marker: PhantomData<*mut libc::c_void>,
 }
+
+unsafe impl Send for Memory {}
 
 impl Memory {
     pub fn new() -> Result<Memory, Box<dyn Error>> {
@@ -41,21 +45,19 @@ impl Memory {
         })
     }
 
-    pub fn map_physical_memory<'a, 'b>(
-        &'a self,
+    fn map_physical_memory(
+        &self,
         address: u32,
         size: u32,
-    ) -> Result<Allocation<'b>, Box<dyn Error>>
-    where
-        'a: 'b,
+    ) -> Result<Allocation, Box<dyn Error>>
     {
         let offset = address % PAGE_SIZE;
         let base = address - offset;
 
-        let mapped_address = unsafe {
+        let base_address = unsafe {
             libc::mmap(
                 0 as *mut _,
-                size as usize,
+                (size + offset) as usize,
                 libc::PROT_READ | libc::PROT_WRITE,
                 libc::MAP_SHARED,
                 self.fd,
@@ -63,14 +65,14 @@ impl Memory {
             )
         };
 
-        if mapped_address.is_null() {
+        if base_address.is_null() {
             return Err(String::from("Unable to map memory").into());
         }
 
         Ok(Allocation {
-            address: mapped_address,
+            address: unsafe { base_address.offset(offset as isize) },
+            base_address: base_address,
             size: size,
-            _marker: PhantomData,
         })
     }
 }
@@ -81,4 +83,14 @@ impl Drop for Memory {
             libc::close(self.fd);
         }
     }
+}
+
+lazy_static! {
+    static ref MEMORY: Mutex<Memory> = { Mutex::new(Memory::new().unwrap()) };
+}
+
+pub fn map_physical_memory(
+        address: u32,
+        size: u32) -> Result<Allocation, Box<dyn Error>> {
+    MEMORY.lock().unwrap().map_physical_memory(address, size)
 }

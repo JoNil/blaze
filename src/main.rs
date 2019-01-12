@@ -13,8 +13,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut x: i32 = 100;
     let mut y: i32 = 100;
-    let mut dx: i32 = 1;
-    let mut dy: i32 = 1;
 
     let mut last = time::Instant::now();
     let mut measure_time = 0;
@@ -44,7 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         vc.fb.swap();
 
         let frame_time = {
-            let mut now = time::Instant::now();
+            let now = time::Instant::now();
             let frame_duration = now.duration_since(last);
             last = now;
             frame_duration.as_secs() as f32 + frame_duration.subsec_nanos() as f32 * 1e-9

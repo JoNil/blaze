@@ -1,8 +1,7 @@
-use std::env;
 use std::error::Error;
+use std::io::ErrorKind;
 use std::mem;
 use std::net::UdpSocket;
-use std::io::ErrorKind;
 use structview::{u32_le, View};
 
 const MESSAGE_MAGIC: u32 = 0x768DD123;

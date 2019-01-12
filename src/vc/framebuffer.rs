@@ -1,4 +1,5 @@
 use super::mailbox::{constants::*, mailbox_call};
+use super::memory::{Allocation, map_physical_memory};
 use libc;
 use std::error::Error;
 
@@ -8,12 +9,12 @@ pub struct Framebuffer {
     pitch: u32,
     current_offset: u32,
 
-    mem_fd: libc::c_int,
-    mapped_address: *mut u32,
+    mapped_fb: Allocation,
 }
 
 impl Framebuffer {
-    pub fn new() -> Result<Framebuffer, Box<dyn Error>> {
+    pub fn new() -> Result<Framebuffer, Box<dyn Error>>
+    {
         let mut message: [u32; 35] = [
             35 * 4,
             MBOX_REQUEST,
@@ -63,39 +64,7 @@ impl Framebuffer {
         let pitch = message[33];
         let address = message[28] & 0x3FFFFFFF;
 
-        println!("{:?}", address as *const libc::c_void);
-
-        let fd = unsafe {
-            libc::open(
-                b"/dev/mem\0" as *const _ as *const _,
-                libc::O_RDWR | libc::O_SYNC,
-            )
-        };
-        if fd < 0 {
-            return Err(String::from("Unable to open memory").into());
-        }
-
-        let page_size = 4 * 1024;
-
-        let offset = address % page_size;
-        let base = address - offset;
-
-        let mapped_address = unsafe {
-            libc::mmap(
-                0 as *mut _,
-                (pitch * 2 * height + offset) as usize,
-                libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_SHARED,
-                fd,
-                base as i32,
-            )
-        };
-
-        println!("{:?}", mapped_address);
-
-        if mapped_address.is_null() {
-            return Err(String::from("Unable to map memory").into());
-        }
+        let mapped_fb = map_physical_memory(address, pitch * 2 * height)?;
 
         Ok(Framebuffer {
             width: width,
@@ -103,8 +72,7 @@ impl Framebuffer {
             pitch: pitch,
             current_offset: height * pitch,
 
-            mem_fd: fd,
-            mapped_address: mapped_address as *mut _,
+            mapped_fb: mapped_fb,
         })
     }
 
@@ -112,7 +80,7 @@ impl Framebuffer {
         const COLOR: u32 = 0xff240A30;
 
         let ptr: *mut u8 =
-            unsafe { (self.mapped_address as *mut u8).offset(self.current_offset as isize) };
+            unsafe { (self.mapped_fb.address as *mut u8).offset(self.current_offset as isize) };
 
         for i in 0..self.height {
             let mut line: *mut u8 = unsafe { ptr.offset((self.pitch * i) as isize) };
@@ -128,7 +96,7 @@ impl Framebuffer {
         const COLOR: u32 = 0xff00ff00;
 
         let ptr: *mut u8 = unsafe {
-            (self.mapped_address as *mut u8)
+            (self.mapped_fb.address as *mut u8)
                 .offset((self.current_offset + 4 * x + self.pitch * y) as isize)
         };
 
