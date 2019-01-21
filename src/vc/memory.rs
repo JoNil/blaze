@@ -23,7 +23,7 @@ impl GpuMemoryHandle {
             4,
             size,
             16,
-            0,
+            MEM_FLAG_HINT_PERMALOCK | MEM_FLAG_ZERO,
             MBOX_TAG_LAST,
         ];
 
@@ -61,14 +61,14 @@ impl Drop for GpuMemoryHandle {
 }
 
 #[derive(Debug)]
-pub struct LockedGpuMemory {
+struct GpuMemory {
     handle: GpuMemoryHandle,
     bus_address: u32,
     _marker: PhantomData<*mut libc::c_void>,
 }
 
-impl LockedGpuMemory {
-    fn new(size: u32) -> Result<LockedGpuMemory, Box<dyn Error>> {
+impl GpuMemory {
+    fn new(size: u32) -> Result<GpuMemory, Box<dyn Error>> {
         let handle = GpuMemoryHandle::new(size)?;
 
         let mut message: [u32; 7] = [
@@ -83,13 +83,13 @@ impl LockedGpuMemory {
 
         mailbox_call(&mut message);
 
-        let bus_address = message[5];
+        let bus_address = message[5] & 0x3FFFFFFF;
 
         if bus_address == handle.handle {
             return Err(String::from("Unable to lock memory").into());
         }
 
-        Ok(LockedGpuMemory {
+        Ok(GpuMemory {
             handle: handle,
             bus_address: bus_address,
             _marker: PhantomData,
@@ -97,7 +97,7 @@ impl LockedGpuMemory {
     }
 }
 
-impl Drop for LockedGpuMemory {
+impl Drop for GpuMemory {
     fn drop(&mut self) {
         let mut message: [u32; 7] = [
             7 * 4,
@@ -115,6 +115,7 @@ impl Drop for LockedGpuMemory {
     }
 }
 
+#[derive(Debug)]
 pub struct Allocation {
     pub address: *mut libc::c_void,
     base_address: *mut libc::c_void,
@@ -127,6 +128,12 @@ impl Drop for Allocation {
             libc::munmap(self.base_address, self.size as usize);
         }
     }
+}
+
+#[derive(Debug)]
+pub struct GpuAllocation {
+    gpu_memory: GpuMemory,
+    allocation: Allocation,
 }
 
 pub struct Memory {
@@ -180,8 +187,14 @@ impl Memory {
         })
     }
 
-    fn allocate_gpu_memory(&self, size: u32) -> Result<LockedGpuMemory, Box<dyn Error>> {
-        LockedGpuMemory::new(size)
+    fn allocate_gpu_memory(&self, size: u32) -> Result<GpuAllocation, Box<dyn Error>> {
+        let gpu_memory = GpuMemory::new(size)?;
+        let allocation = self.map_physical_memory(gpu_memory.bus_address, size)?;
+
+        Ok(GpuAllocation {
+            gpu_memory: gpu_memory,
+            allocation: allocation,
+        })
     }
 }
 
@@ -201,6 +214,6 @@ pub fn map_physical_memory(address: u32, size: u32) -> Result<Allocation, Box<dy
     MEMORY.lock().unwrap().map_physical_memory(address, size)
 }
 
-pub fn allocate_gpu_memory(size: u32) -> Result<LockedGpuMemory, Box<dyn Error>> {
+pub fn allocate_gpu_memory(size: u32) -> Result<GpuAllocation, Box<dyn Error>> {
     MEMORY.lock().unwrap().allocate_gpu_memory(size)
 }
