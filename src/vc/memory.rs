@@ -4,6 +4,8 @@ use libc;
 use std::error::Error;
 use std::marker::PhantomData;
 use std::sync::Mutex;
+use std::mem;
+use std::slice;
 
 const PAGE_SIZE: u32 = 4 * 1024;
 
@@ -133,7 +135,19 @@ impl Drop for Allocation {
 #[derive(Debug)]
 pub struct GpuAllocation {
     gpu_memory: GpuMemory,
-    pub allocation: Allocation,
+    allocation: Allocation,
+}
+
+impl GpuAllocation {
+    pub fn map_slice<T: Copy>(&self) -> &[T] {
+        assert!(self.allocation.size % mem::size_of::<T>() as u32 == 0);
+        unsafe { slice::from_raw_parts(self.allocation.address as *const _, self.allocation.size as usize / mem::size_of::<T>()) }
+    }
+
+    pub fn map_slice_mut<T: Copy>(&mut self) -> &mut [T] {
+        assert!(self.allocation.size % mem::size_of::<T>() as u32 == 0);
+        unsafe { slice::from_raw_parts_mut(self.allocation.address as *mut _, self.allocation.size as usize / mem::size_of::<T>()) }
+    }
 }
 
 pub struct Memory {
