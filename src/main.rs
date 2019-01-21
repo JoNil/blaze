@@ -11,6 +11,7 @@ use std::fs;
 
 fn stop_cursor_blink() -> Result<(), Box<dyn Error>> {
     fs::write("/sys/class/graphics/fbcon/cursor_blink", "0")?;
+    fs::write("/proc/sys/kernel/printk", "1")?;
     Ok(())
 }
 
