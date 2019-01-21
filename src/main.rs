@@ -7,12 +7,17 @@ use crate::vc::Vc;
 use std::error::Error;
 use std::thread;
 use std::time;
+use std::fs;
 
-fn stop_cursor_blink() {
-    
+fn stop_cursor_blink() -> Result<(), Box<dyn Error>> {
+    fs::write("/sys/class/graphics/fbcon/cursor_blink", "0")?;
+    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+
+    stop_cursor_blink()?;
+    
     let mut vc = Vc::new()?;
 
     v3d::init()?;
