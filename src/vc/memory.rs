@@ -133,7 +133,7 @@ impl Drop for Allocation {
 #[derive(Debug)]
 pub struct GpuAllocation {
     gpu_memory: GpuMemory,
-    allocation: Allocation,
+    pub allocation: Allocation,
 }
 
 pub struct Memory {
