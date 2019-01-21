@@ -1,7 +1,7 @@
 mod framebuffer;
 mod mailbox;
 mod memory;
-mod v3d;
+pub mod v3d;
 
 use self::framebuffer::Framebuffer;
 use std::error::Error;

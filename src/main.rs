@@ -2,13 +2,21 @@ mod input;
 mod vc;
 
 use crate::input::Input;
+use crate::vc::v3d;
 use crate::vc::Vc;
 use std::error::Error;
 use std::thread;
 use std::time;
 
+fn stop_cursor_blink() {
+    
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let mut vc = Vc::new()?;
+
+    v3d::init()?;
+
     let mut input = Input::new()?;
 
     let mut x: i32 = 100;

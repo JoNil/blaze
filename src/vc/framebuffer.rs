@@ -1,6 +1,5 @@
 use super::mailbox::{constants::*, mailbox_call};
 use super::memory::{map_physical_memory, Allocation};
-use libc;
 use std::error::Error;
 
 pub struct Framebuffer {

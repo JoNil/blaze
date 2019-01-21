@@ -83,6 +83,15 @@ pub mod constants {
     pub const CLK_SDRAM_ID: u32 = 0x8; // SDRAM
     pub const CLK_PIXEL_ID: u32 = 0x9; // PIXEL
     pub const CLK_PWM_ID: u32 = 0xA; // PWM
+
+    pub const MEM_FLAG_DISCARDABLE: u32 = 1 << 0; // can be resized to 0 at any time. Use for cached data
+    pub const MEM_FLAG_NORMAL: u32 = 0 << 2; // normal allocating alias. Don't use from ARM
+    pub const MEM_FLAG_DIRECT: u32 = 1 << 2; // 0xC alias uncached
+    pub const MEM_FLAG_COHERENT: u32 = 2 << 2; // 0x8 alias. Non-allocating in L2 but coherent
+    pub const MEM_FLAG_L1_NONALLOCATING: u32 = MEM_FLAG_DIRECT | MEM_FLAG_COHERENT; // Allocating in L2
+    pub const MEM_FLAG_ZERO: u32 = 1 << 4; // initialise buffer to all zeros
+    pub const MEM_FLAG_NO_INIT: u32 = 1 << 5; // don't initialise (default is initialise to all ones
+    pub const MEM_FLAG_HINT_PERMALOCK: u32 = 1 << 6; // Likely to be locked for long periods of time.
 }
 
 #[allow(dead_code)]

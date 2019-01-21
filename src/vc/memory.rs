@@ -1,3 +1,4 @@
+use crate::vc::mailbox::{constants::*, mailbox_call};
 use lazy_static::lazy_static;
 use libc;
 use std::error::Error;
@@ -5,6 +6,114 @@ use std::marker::PhantomData;
 use std::sync::Mutex;
 
 const PAGE_SIZE: u32 = 4 * 1024;
+
+#[derive(Debug)]
+struct GpuMemoryHandle {
+    handle: u32,
+    _marker: PhantomData<*mut libc::c_void>,
+}
+
+impl GpuMemoryHandle {
+    fn new(size: u32) -> Result<GpuMemoryHandle, Box<dyn Error>> {
+        let mut message: [u32; 9] = [
+            9 * 4,
+            MBOX_REQUEST,
+            MBOX_TAG_ALLOCATE_MEMORY,
+            12,
+            4,
+            size,
+            16,
+            0,
+            MBOX_TAG_LAST,
+        ];
+
+        mailbox_call(&mut message);
+
+        let handle = message[5];
+
+        if handle == size {
+            return Err(String::from("Unable to allocate memory").into());
+        }
+
+        Ok(GpuMemoryHandle {
+            handle: handle,
+            _marker: PhantomData,
+        })
+    }
+}
+
+impl Drop for GpuMemoryHandle {
+    fn drop(&mut self) {
+        let mut message: [u32; 7] = [
+            7 * 4,
+            MBOX_REQUEST,
+            MBOX_TAG_RELEASE_MEMORY,
+            4,
+            4,
+            self.handle,
+            MBOX_TAG_LAST,
+        ];
+
+        mailbox_call(&mut message);
+
+        assert!(message[5] == 0);
+    }
+}
+
+#[derive(Debug)]
+pub struct LockedGpuMemory {
+    handle: GpuMemoryHandle,
+    bus_address: u32,
+    _marker: PhantomData<*mut libc::c_void>,
+}
+
+impl LockedGpuMemory {
+    fn new(size: u32) -> Result<LockedGpuMemory, Box<dyn Error>> {
+        let handle = GpuMemoryHandle::new(size)?;
+
+        let mut message: [u32; 7] = [
+            7 * 4,
+            MBOX_REQUEST,
+            MBOX_TAG_LOCK_MEMORY,
+            4,
+            4,
+            handle.handle,
+            MBOX_TAG_LAST,
+        ];
+
+        mailbox_call(&mut message);
+
+        let bus_address = message[5];
+
+        if bus_address == handle.handle {
+            return Err(String::from("Unable to lock memory").into());
+        }
+
+        Ok(LockedGpuMemory {
+            handle: handle,
+            bus_address: bus_address,
+            _marker: PhantomData,
+        })
+    }
+}
+
+impl Drop for LockedGpuMemory {
+    fn drop(&mut self) {
+        let mut message: [u32; 7] = [
+            7 * 4,
+            MBOX_REQUEST,
+            MBOX_TAG_UNLOCK_MEMORY,
+            4,
+            4,
+            self.handle.handle,
+            MBOX_TAG_LAST,
+        ];
+
+        mailbox_call(&mut message);
+
+        assert!(message[5] == 0);
+    }
+}
 
 pub struct Allocation {
     pub address: *mut libc::c_void,
@@ -70,6 +179,10 @@ impl Memory {
             size: size,
         })
     }
+
+    fn allocate_gpu_memory(&self, size: u32) -> Result<LockedGpuMemory, Box<dyn Error>> {
+        LockedGpuMemory::new(size)
+    }
 }
 
 impl Drop for Memory {
@@ -86,4 +199,8 @@ lazy_static! {
 
 pub fn map_physical_memory(address: u32, size: u32) -> Result<Allocation, Box<dyn Error>> {
     MEMORY.lock().unwrap().map_physical_memory(address, size)
+}
+
+pub fn allocate_gpu_memory(size: u32) -> Result<LockedGpuMemory, Box<dyn Error>> {
+    MEMORY.lock().unwrap().allocate_gpu_memory(size)
 }
