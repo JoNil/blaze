@@ -2,6 +2,8 @@
 
 use byteorder::{LittleEndian, WriteBytesExt};
 use std::io::Cursor;
+use static_assertions::const_assert;
+use std::mem;
 
 const CMD_HALT: u8 = 0x00;
 const CMD_NO_OP: u8 = 0x01;
@@ -37,17 +39,20 @@ pub const NV_SHADER_STATE_FLAG_STRIDE_POINT_SIZE_INCLUDED_IN_SHADED_VERTEX_DATA:
 pub const NV_SHADER_STATE_FLAG_ENABLE_CLIPPING: u8 = 0x4;
 pub const NV_SHADER_STATE_FLAG_CLIP_COORDINATES_HEADER_INCLUDED_IN_SHADED_VERTEX_DATA: u8 = 0x8;
 
-#[repr(C)]
-#[repr(align(16))]
+#[repr(C, align(16))]
+#[derive(Copy, Clone, Debug)]
 pub struct NvShaderState {
-    flags: u8,
-    stride: u8,
-    fragment_shader_uniforms: u8,
-    fragment_shader_varyings: u8,
-    fragment_shader_code_address: u32,
-    fragment_shader_uniforms_address: u32,
-    vertex_data_address: u32,
+    pub flags: u8,
+    pub stride: u8,
+    pub fragment_shader_uniforms: u8,
+    pub fragment_shader_varyings: u8,
+    pub fragment_shader_code_address: u32,
+    pub fragment_shader_uniforms_address: u32,
+    pub vertex_data_address: u32,
 }
+
+const_assert!(NvShaderStateSize; mem::size_of::<NvShaderState>() == 16);
+const_assert!(NvShaderStateAlign; mem::align_of::<NvShaderState>() == 16);
 
 pub const CONFIGURATION_BITS_FLAGS8_ENABLE_FORWARD_FACING_PRIMITIVE: u8 = 0x01; // Enable Forward Facing Primitive
 pub const CONFIGURATION_BITS_FLAGS8_ENABLE_REVERSE_FACING_PRIMITIVE: u8 = 0x02; // Enable Reverse Facing Primitive
@@ -207,10 +212,10 @@ impl<'a> CommandBuilder<'a> {
         self.cursor.write_u32::<LittleEndian>(index).unwrap();
     }
 
-    pub fn nv_shader_state(&mut self, nv_shader_state: &NvShaderState) {
+    pub fn nv_shader_state(&mut self, nv_shader_state_bus_address: u32) {
         self.cursor.write_u8(CMD_NV_SHADER_STATE).unwrap();
         self.cursor
-            .write_u32::<LittleEndian>(nv_shader_state as *const _ as u32)
+            .write_u32::<LittleEndian>(nv_shader_state_bus_address)
             .unwrap();
     }
 

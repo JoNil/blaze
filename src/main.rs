@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     
     let mut vc = Vc::new()?;
 
-    v3d::init()?;
+    v3d::init(&vc.fb)?;
 
     let mut input = Input::new()?;
 

@@ -74,6 +74,16 @@ impl Framebuffer {
         })
     }
 
+    #[inline]
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    #[inline]
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
     pub fn clear(&mut self) {
         const COLOR: u32 = 0xff240A30;
 

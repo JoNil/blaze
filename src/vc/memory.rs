@@ -8,6 +8,8 @@ use std::mem;
 use std::slice;
 
 const PAGE_SIZE: u32 = 4 * 1024;
+const BUS_ADDRESSES_L2CACHE_ENABLED: u32 =  0x40000000;
+const BUS_ADDRESSES_L2CACHE_DISABLED: u32 = 0xC0000000;
 
 #[derive(Debug)]
 struct GpuMemoryHandle {
@@ -121,7 +123,18 @@ impl Drop for GpuMemory {
 pub struct Allocation {
     pub address: *mut libc::c_void,
     base_address: *mut libc::c_void,
+    bus_address: u32,
     size: u32,
+}
+
+impl Allocation {
+    pub fn get_bus_address_l2_disabled(&self) -> u32 {
+        self.bus_address | BUS_ADDRESSES_L2CACHE_DISABLED
+    }
+
+    pub fn get_bus_address_l2_enabled(&self) -> u32 {
+        self.bus_address | BUS_ADDRESSES_L2CACHE_ENABLED
+    }
 }
 
 impl Drop for Allocation {
@@ -140,14 +153,26 @@ pub struct GpuAllocation<T: Copy> {
 }
 
 impl<T: Copy> GpuAllocation<T> {
-    pub fn map_slice(&self) -> &[T] {
+    pub fn as_slice(&self) -> &[T] {
         assert!(self.allocation.size % mem::size_of::<T>() as u32 == 0);
         unsafe { slice::from_raw_parts(self.allocation.address as *const _, self.allocation.size as usize / mem::size_of::<T>()) }
     }
 
-    pub fn map_slice_mut(&mut self) -> &mut [T] {
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
         assert!(self.allocation.size % mem::size_of::<T>() as u32 == 0);
         unsafe { slice::from_raw_parts_mut(self.allocation.address as *mut _, self.allocation.size as usize / mem::size_of::<T>()) }
+    }
+
+    pub fn len(&self) -> u32 {
+        self.allocation.size / mem::size_of::<T>() as u32
+    }
+
+    pub fn get_bus_address_l2_disabled(&self) -> u32 {
+        self.gpu_memory.bus_address | BUS_ADDRESSES_L2CACHE_DISABLED
+    }
+
+    pub fn get_bus_address_l2_enabled(&self) -> u32 {
+        self.gpu_memory.bus_address | BUS_ADDRESSES_L2CACHE_ENABLED
     }
 }
 
@@ -176,9 +201,9 @@ impl Memory {
         })
     }
 
-    fn map_physical_memory(&self, address: u32, size: u32) -> Result<Allocation, Box<dyn Error>> {
-        let offset = address % PAGE_SIZE;
-        let base = address - offset;
+    fn map_physical_memory(&self, bus_address: u32, size: u32) -> Result<Allocation, Box<dyn Error>> {
+        let offset = bus_address % PAGE_SIZE;
+        let base = bus_address - offset;
 
         let base_address = unsafe {
             libc::mmap(
@@ -198,6 +223,7 @@ impl Memory {
         Ok(Allocation {
             address: unsafe { base_address.offset(offset as isize) },
             base_address: base_address,
+            bus_address: bus_address,
             size: size,
         })
     }
@@ -233,6 +259,6 @@ pub fn map_physical_memory(address: u32, size: u32) -> Result<Allocation, Box<dy
     MEMORY.lock().unwrap().map_physical_memory(address, size)
 }
 
-pub fn allocate_gpu_memory<T: Copy>(size: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
-    MEMORY.lock().unwrap().allocate_gpu_memory(size)
+pub fn allocate_gpu_memory<T: Copy>(count: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
+    MEMORY.lock().unwrap().allocate_gpu_memory(count)
 }
