@@ -137,7 +137,7 @@ impl RenderState {
             shader_program
         };
 
-        let bin_memory = allocate_gpu_memory::<u8>(2 * 1024 * 1024)?;
+        let bin_memory = allocate_gpu_memory::<u8>(3 * 1024 * 1024)?;
         let bin_base = allocate_gpu_memory::<u8>(48 * (4096 / 32) * (4096 / 32))?;
 
         let (binning_command_buffer, binning_command_buffer_end) = {
@@ -235,19 +235,21 @@ impl RenderState {
     }
 
     fn draw(&self, v3d: &mut V3d) {
-        v3d.set_ct0ca(self.binning_command_buffer.get_bus_address_l2_disabled());
+        v3d.set_ct0ca(dbg!(self.binning_command_buffer.get_bus_address_l2_disabled()));
         v3d.set_ct0ea(self.binning_command_buffer.get_bus_address_l2_disabled() + self.binning_command_buffer_end);
 
-        while dbg!(v3d.bfc()) != 1 {};
+        while v3d.bfc() != 1 {
+            dbg!(v3d.pcs());
+        }
         v3d.set_bfc(0);
 
         v3d.set_ct1ca(self.render_command_buffer.get_bus_address_l2_disabled());
         v3d.set_ct1ea(self.render_command_buffer.get_bus_address_l2_disabled() + self.render_command_buffer_end);
 
-        while dbg!(v3d.bfc()) != 1 {};
+        while v3d.bfc() != 1 {}
         v3d.set_bfc(0);
 
-        while dbg!(v3d.pcs()) != 1 {};
+        while v3d.pcs() != 1 {}
     }
 }
 
