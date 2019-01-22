@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 pub mod command_builder;
-mod defs;
+pub mod defs;
 
 use self::defs::*;
 use crate::vc::memory::{map_physical_memory, Allocation};
