@@ -84,6 +84,10 @@ impl Framebuffer {
         self.height
     }
 
+    pub fn allocation(&self) -> &Allocation {
+        &self.mapped_fb
+    }
+
     pub fn clear(&mut self) {
         const COLOR: u32 = 0xff240A30;
 

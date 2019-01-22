@@ -160,5 +160,44 @@ pub fn init(fb: &Framebuffer) -> Result<(), Box<dyn Error>> {
         (binning_command_buffer, end)
     };
 
+    let (render_command_buffer, render_command_buffer_end) = {
+
+        let mut render_command_buffer = allocate_gpu_memory::<u8>(4096)?;
+
+        let mut cb = CommandBuilder::new(render_command_buffer.as_mut_slice());
+
+        cb.wait_on_semaphore();
+
+        cb.clear_colors(0xff240A30ff240A30, 0, 0, 0);
+
+        cb.tile_rendering_mode_configuration(
+                fb.allocation().get_bus_address_l2_disabled(), fb.width() as u16, fb.height() as u16, TILE_RENDER_FLAGS_FRAME_BUFFER_COLOR_FORMAT_RGBA8888);
+
+        cb.tile_coordinates(0, 0);
+        cb.store_tile_buffer_general(0, 0, 0);
+
+        let column_count = (fb.width() + 63) / 64;
+        let row_count = (fb.height() + 63) / 64;
+
+        for x in 0..column_count {
+            for y in 0..row_count {
+
+                if x == column_count - 1 && y == row_count - 1 {
+                    cb.tile_coordinates(x as u8, y as u8);
+                    cb.branch_to_sub_list(bin_memory.get_bus_address_l2_disabled() + ((y * column_count + x) * 32));
+                    cb.store_multi_sample_end();
+                } else {
+                    cb.tile_coordinates(x as u8, y as u8);
+                    cb.branch_to_sub_list(bin_memory.get_bus_address_l2_disabled() + ((y * column_count + x) * 32));
+                    cb.store_multi_sample();
+                }
+            }
+        }
+
+        let end = cb.end();
+
+        (render_command_buffer, end)
+    };
+
     Ok(())
 }
