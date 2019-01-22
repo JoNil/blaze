@@ -4,9 +4,8 @@ mod defs;
 use crate::vc::mailbox::{constants::*, mailbox_call};
 use crate::vc::memory::allocate_gpu_memory;
 use std::error::Error;
-use std::mem;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 struct Vertex {
     x: u16, // X In 12.4 Fixed Point
     y: u16, // Y In 12.4 Fixed Point
@@ -41,9 +40,9 @@ pub fn init() -> Result<(), Box<dyn Error>> {
 
     mailbox_call(&mut message);
 
-    let mut vertex_data_memory = allocate_gpu_memory((3 * mem::size_of::<Vertex>()) as u32)?;
+    let mut vertex_data_memory = allocate_gpu_memory::<Vertex>(3)?;
     {
-        let vertex_data_slice = vertex_data_memory.map_slice_mut::<Vertex>();
+        let vertex_data_slice = vertex_data_memory.map_slice_mut();
         vertex_data_slice[0] = Vertex {
             x: 320 * 16,
             y: 32 * 16,
@@ -73,12 +72,7 @@ pub fn init() -> Result<(), Box<dyn Error>> {
         };
     }
 
-    let mem2 = allocate_gpu_memory(32)?;
-    let mem3 = allocate_gpu_memory(32)?;
-
     dbg!(vertex_data_memory);
-    dbg!(mem2);
-    dbg!(mem3);
 
     Ok(())
 }

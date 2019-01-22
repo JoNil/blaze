@@ -133,18 +133,19 @@ impl Drop for Allocation {
 }
 
 #[derive(Debug)]
-pub struct GpuAllocation {
+pub struct GpuAllocation<T: Copy> {
     gpu_memory: GpuMemory,
     allocation: Allocation,
+    _marker: PhantomData<T>
 }
 
-impl GpuAllocation {
-    pub fn map_slice<T: Copy>(&self) -> &[T] {
+impl<T: Copy> GpuAllocation<T> {
+    pub fn map_slice(&self) -> &[T] {
         assert!(self.allocation.size % mem::size_of::<T>() as u32 == 0);
         unsafe { slice::from_raw_parts(self.allocation.address as *const _, self.allocation.size as usize / mem::size_of::<T>()) }
     }
 
-    pub fn map_slice_mut<T: Copy>(&mut self) -> &mut [T] {
+    pub fn map_slice_mut(&mut self) -> &mut [T] {
         assert!(self.allocation.size % mem::size_of::<T>() as u32 == 0);
         unsafe { slice::from_raw_parts_mut(self.allocation.address as *mut _, self.allocation.size as usize / mem::size_of::<T>()) }
     }
@@ -201,13 +202,17 @@ impl Memory {
         })
     }
 
-    fn allocate_gpu_memory(&self, size: u32) -> Result<GpuAllocation, Box<dyn Error>> {
+    fn allocate_gpu_memory<T: Copy>(&self, count: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
+
+        let size = count * mem::size_of::<T>() as u32;
+
         let gpu_memory = GpuMemory::new(size)?;
         let allocation = self.map_physical_memory(gpu_memory.bus_address, size)?;
 
         Ok(GpuAllocation {
             gpu_memory: gpu_memory,
             allocation: allocation,
+            _marker: PhantomData,
         })
     }
 }
@@ -228,6 +233,6 @@ pub fn map_physical_memory(address: u32, size: u32) -> Result<Allocation, Box<dy
     MEMORY.lock().unwrap().map_physical_memory(address, size)
 }
 
-pub fn allocate_gpu_memory(size: u32) -> Result<GpuAllocation, Box<dyn Error>> {
+pub fn allocate_gpu_memory<T: Copy>(size: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
     MEMORY.lock().unwrap().allocate_gpu_memory(size)
 }
