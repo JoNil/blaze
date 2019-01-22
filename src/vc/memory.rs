@@ -3,12 +3,12 @@ use lazy_static::lazy_static;
 use libc;
 use std::error::Error;
 use std::marker::PhantomData;
-use std::sync::Mutex;
 use std::mem;
 use std::slice;
+use std::sync::Mutex;
 
 const PAGE_SIZE: u32 = 4 * 1024;
-const BUS_ADDRESSES_L2CACHE_ENABLED: u32 =  0x40000000;
+const BUS_ADDRESSES_L2CACHE_ENABLED: u32 = 0x40000000;
 const BUS_ADDRESSES_L2CACHE_DISABLED: u32 = 0xC0000000;
 
 #[derive(Debug)]
@@ -149,18 +149,28 @@ impl Drop for Allocation {
 pub struct GpuAllocation<T: Copy> {
     gpu_memory: GpuMemory,
     allocation: Allocation,
-    _marker: PhantomData<T>
+    _marker: PhantomData<T>,
 }
 
 impl<T: Copy> GpuAllocation<T> {
     pub fn as_slice(&self) -> &[T] {
         assert!(self.allocation.size % mem::size_of::<T>() as u32 == 0);
-        unsafe { slice::from_raw_parts(self.allocation.address as *const _, self.allocation.size as usize / mem::size_of::<T>()) }
+        unsafe {
+            slice::from_raw_parts(
+                self.allocation.address as *const _,
+                self.allocation.size as usize / mem::size_of::<T>(),
+            )
+        }
     }
 
     pub fn as_mut_slice(&mut self) -> &mut [T] {
         assert!(self.allocation.size % mem::size_of::<T>() as u32 == 0);
-        unsafe { slice::from_raw_parts_mut(self.allocation.address as *mut _, self.allocation.size as usize / mem::size_of::<T>()) }
+        unsafe {
+            slice::from_raw_parts_mut(
+                self.allocation.address as *mut _,
+                self.allocation.size as usize / mem::size_of::<T>(),
+            )
+        }
     }
 
     pub fn len(&self) -> u32 {
@@ -201,7 +211,11 @@ impl Memory {
         })
     }
 
-    fn map_physical_memory(&self, bus_address: u32, size: u32) -> Result<Allocation, Box<dyn Error>> {
+    fn map_physical_memory(
+        &self,
+        bus_address: u32,
+        size: u32,
+    ) -> Result<Allocation, Box<dyn Error>> {
         let offset = bus_address % PAGE_SIZE;
         let base = bus_address - offset;
 
@@ -229,7 +243,6 @@ impl Memory {
     }
 
     fn allocate_gpu_memory<T: Copy>(&self, count: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
-
         let size = count * mem::size_of::<T>() as u32;
 
         let gpu_memory = GpuMemory::new(size)?;

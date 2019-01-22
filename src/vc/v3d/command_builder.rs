@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use byteorder::{LittleEndian, WriteBytesExt};
-use std::io::Cursor;
 use static_assertions::const_assert;
+use std::io::Cursor;
 use std::mem;
 
 const CMD_HALT: u8 = 0x00;

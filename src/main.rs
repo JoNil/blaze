@@ -5,8 +5,8 @@ use crate::input::Input;
 use crate::vc::framebuffer::Framebuffer;
 use crate::vc::mailbox::{constants::*, mailbox_call};
 use crate::vc::memory::allocate_gpu_memory;
-use crate::vc::v3d::V3d;
 use crate::vc::v3d::command_builder::*;
+use crate::vc::v3d::V3d;
 use std::error::Error;
 use std::fs;
 use std::thread;
@@ -30,7 +30,6 @@ struct Vertex {
 }
 
 fn render(v3d: &mut V3d, fb: &Framebuffer) -> Result<(), Box<dyn Error>> {
-    
     let mut message: [u32; 17] = [
         17 * 4,
         MBOX_REQUEST,
@@ -91,28 +90,21 @@ fn render(v3d: &mut V3d, fb: &Framebuffer) -> Result<(), Box<dyn Error>> {
 
     let fragment_shader_buffer = {
         let fragment_shader = &[
-            0x958E0DBF,
-            0xD1724823, // mov r0, vary; mov r3.8d, 1.0
-            0x818E7176,
-            0x40024821, // fadd r0, r0, r5; mov r1, vary
-            0x818E7376,
-            0x10024862, // fadd r1, r1, r5; mov r2, vary
-            0x819E7540,
-            0x114248A3, // fadd r2, r2, r5; mov r3.8a, r0
-            0x809E7009,
-            0x115049E3, // nop; mov r3.8b, r1
-            0x809E7012,
-            0x116049E3, // nop; mov r3.8c, r2
-            0x159E76C0,
-            0x30020BA7, // mov tlbc, r3; nop; thrend
-            0x009E7000,
-            0x100009E7, // nop; nop; nop
-            0x009E7000,
-            0x500009E7, // nop; nop; sbdone
+            0x958E0DBF, 0xD1724823, // mov r0, vary; mov r3.8d, 1.0
+            0x818E7176, 0x40024821, // fadd r0, r0, r5; mov r1, vary
+            0x818E7376, 0x10024862, // fadd r1, r1, r5; mov r2, vary
+            0x819E7540, 0x114248A3, // fadd r2, r2, r5; mov r3.8a, r0
+            0x809E7009, 0x115049E3, // nop; mov r3.8b, r1
+            0x809E7012, 0x116049E3, // nop; mov r3.8c, r2
+            0x159E76C0, 0x30020BA7, // mov tlbc, r3; nop; thrend
+            0x009E7000, 0x100009E7, // nop; nop; nop
+            0x009E7000, 0x500009E7, // nop; nop; sbdone
         ];
 
         let mut fragment_shader_buffer = allocate_gpu_memory::<u32>(fragment_shader.len() as u32)?;
-        fragment_shader_buffer.as_mut_slice().copy_from_slice(fragment_shader);
+        fragment_shader_buffer
+            .as_mut_slice()
+            .copy_from_slice(fragment_shader);
         fragment_shader_buffer
     };
 
@@ -133,10 +125,9 @@ fn render(v3d: &mut V3d, fb: &Framebuffer) -> Result<(), Box<dyn Error>> {
     };
 
     let bin_memory = allocate_gpu_memory::<u8>(2 * 1024 * 1024)?;
-    let bin_base = allocate_gpu_memory::<u8>(48*(4096/32)*(4096/32))?;
+    let bin_base = allocate_gpu_memory::<u8>(48 * (4096 / 32) * (4096 / 32))?;
 
     let (binning_command_buffer, binning_command_buffer_end) = {
-
         let mut binning_command_buffer = allocate_gpu_memory::<u8>(4096)?;
 
         let mut cb = CommandBuilder::new(binning_command_buffer.as_mut_slice());
@@ -146,7 +137,7 @@ fn render(v3d: &mut V3d, fb: &Framebuffer) -> Result<(), Box<dyn Error>> {
             bin_base.get_bus_address_l2_disabled(),
             ((fb.width() + 63) / 64) as u8,
             ((fb.height() + 63) / 64) as u8,
-            TILE_BINNING_FLAGS_AUTO_INITIALISE_TILE_STATE_DATA_ARRAY
+            TILE_BINNING_FLAGS_AUTO_INITIALISE_TILE_STATE_DATA_ARRAY,
         );
 
         cb.start_tile_binning();
@@ -155,15 +146,16 @@ fn render(v3d: &mut V3d, fb: &Framebuffer) -> Result<(), Box<dyn Error>> {
         cb.clip_window(0, 0, fb.width() as u16, fb.height() as u16);
 
         cb.configuration_bits(
-                CONFIGURATION_BITS_FLAGS8_ENABLE_FORWARD_FACING_PRIMITIVE |
-                CONFIGURATION_BITS_FLAGS8_ENABLE_REVERSE_FACING_PRIMITIVE,
-                CONFIGURATION_BITS_FLAGS16_EARLY_Z_UPDATES_ENABLE);
+            CONFIGURATION_BITS_FLAGS8_ENABLE_FORWARD_FACING_PRIMITIVE
+                | CONFIGURATION_BITS_FLAGS8_ENABLE_REVERSE_FACING_PRIMITIVE,
+            CONFIGURATION_BITS_FLAGS16_EARLY_Z_UPDATES_ENABLE,
+        );
 
         cb.viewport_offset(0, 0);
 
         cb.nv_shader_state(shader_program.get_bus_address_l2_disabled());
         cb.vertex_array_primitives(PRIMITIVE_MODE_TRIANGLES, 3, 0);
-        
+
         cb.flush();
 
         let end = cb.end();
@@ -172,7 +164,6 @@ fn render(v3d: &mut V3d, fb: &Framebuffer) -> Result<(), Box<dyn Error>> {
     };
 
     let (render_command_buffer, render_command_buffer_end) = {
-
         let mut render_command_buffer = allocate_gpu_memory::<u8>(4096)?;
 
         let mut cb = CommandBuilder::new(render_command_buffer.as_mut_slice());
@@ -182,7 +173,11 @@ fn render(v3d: &mut V3d, fb: &Framebuffer) -> Result<(), Box<dyn Error>> {
         cb.clear_colors(0xff240A30ff240A30, 0, 0, 0);
 
         cb.tile_rendering_mode_configuration(
-                fb.allocation().get_bus_address_l2_disabled(), fb.width() as u16, fb.height() as u16, TILE_RENDER_FLAGS_FRAME_BUFFER_COLOR_FORMAT_RGBA8888);
+            fb.allocation().get_bus_address_l2_disabled(),
+            fb.width() as u16,
+            fb.height() as u16,
+            TILE_RENDER_FLAGS_FRAME_BUFFER_COLOR_FORMAT_RGBA8888,
+        );
 
         cb.tile_coordinates(0, 0);
         cb.store_tile_buffer_general(0, 0, 0);
@@ -192,14 +187,17 @@ fn render(v3d: &mut V3d, fb: &Framebuffer) -> Result<(), Box<dyn Error>> {
 
         for x in 0..column_count {
             for y in 0..row_count {
-
                 if x == column_count - 1 && y == row_count - 1 {
                     cb.tile_coordinates(x as u8, y as u8);
-                    cb.branch_to_sub_list(bin_memory.get_bus_address_l2_disabled() + ((y * column_count + x) * 32));
+                    cb.branch_to_sub_list(
+                        bin_memory.get_bus_address_l2_disabled() + ((y * column_count + x) * 32),
+                    );
                     cb.store_multi_sample_end();
                 } else {
                     cb.tile_coordinates(x as u8, y as u8);
-                    cb.branch_to_sub_list(bin_memory.get_bus_address_l2_disabled() + ((y * column_count + x) * 32));
+                    cb.branch_to_sub_list(
+                        bin_memory.get_bus_address_l2_disabled() + ((y * column_count + x) * 32),
+                    );
                     cb.store_multi_sample();
                 }
             }
@@ -213,13 +211,13 @@ fn render(v3d: &mut V3d, fb: &Framebuffer) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-
 fn main() -> Result<(), Box<dyn Error>> {
-
     stop_cursor_blink()?;
-    
+
     let mut fb = Framebuffer::new()?;
     let mut v3d = V3d::new()?;
+
+    dbg!(v3d.ident0());
 
     render(&mut v3d, &fb)?;
 
