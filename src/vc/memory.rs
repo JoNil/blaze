@@ -104,8 +104,6 @@ impl GpuMemory {
 impl Drop for GpuMemory {
     fn drop(&mut self) {
 
-        println!("FREE");
-
         let mut message: [u32; 7] = [
             7 * 4,
             MBOX_REQUEST,
