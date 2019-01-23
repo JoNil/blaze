@@ -7,10 +7,18 @@ use crate::vc::mailbox::{constants::*, mailbox_call};
 use crate::vc::memory::{allocate_gpu_memory, GpuAllocation};
 use crate::vc::v3d::command_builder::*;
 use crate::vc::v3d::V3d;
+use nix::sys::signal;
 use std::error::Error;
 use std::fs;
 use std::thread;
 use std::time;
+
+extern fn signal_handler(_: nix::libc::c_int) {
+    // Signal handlers are special functions, only [async-signal-safe]
+    // (http://man7.org/linux/man-pages/man7/signal-safety.7.html) functions
+    // can be called in this contex.
+    panic!("Exit");
+}
 
 fn stop_cursor_blink() -> Result<(), Box<dyn Error>> {
     fs::write("/sys/class/graphics/fbcon/cursor_blink", "0")?;
@@ -137,7 +145,7 @@ impl RenderState {
             shader_program
         };
 
-        let bin_memory = allocate_gpu_memory::<u8>(3 * 1024 * 1024)?;
+        let bin_memory = allocate_gpu_memory::<u8>(4 * 1024 * 1024)?;
         let bin_base = allocate_gpu_memory::<u8>(48 * (4096 / 32) * (4096 / 32))?;
 
         let (binning_command_buffer, binning_command_buffer_end) = {
@@ -235,11 +243,11 @@ impl RenderState {
     }
 
     fn draw(&self, v3d: &mut V3d) {
-        v3d.set_ct0ca(dbg!(self.binning_command_buffer.get_bus_address_l2_disabled()));
+        v3d.set_ct0ca(self.binning_command_buffer.get_bus_address_l2_disabled());
         v3d.set_ct0ea(self.binning_command_buffer.get_bus_address_l2_disabled() + self.binning_command_buffer_end);
 
         while v3d.bfc() != 1 {
-            dbg!(v3d.pcs());
+            //dbg!(v3d.pcs());
         }
         v3d.set_bfc(0);
 
@@ -254,6 +262,16 @@ impl RenderState {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+
+    let handler = signal::SigHandler::Handler(signal_handler);
+    let action = signal::SigAction::new(handler,
+        signal::SaFlags::empty(),
+        signal::SigSet::empty(),
+    );
+    unsafe {
+        signal::sigaction(signal::Signal::SIGINT, &action).unwrap();
+    }
+
     stop_cursor_blink()?;
 
     let mut fb = Framebuffer::new()?;
@@ -290,8 +308,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             y += 1;
         }
 
-        fb.clear();
-        fb.draw(x as u32, y as u32);
+        //fb.clear();
+        //fb.draw(x as u32, y as u32);
 
         render.draw(&mut v3d);
 
