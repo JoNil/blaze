@@ -138,11 +138,15 @@ impl Allocation {
 }
 
 impl Drop for Allocation {
+    #[cfg(unix)]
     fn drop(&mut self) {
         unsafe {
             libc::munmap(self.base_address, self.size as usize);
         }
     }
+
+    #[cfg(windows)]
+    fn drop(&mut self) {}
 }
 
 #[derive(Debug)]
@@ -194,6 +198,8 @@ pub struct Memory {
 unsafe impl Send for Memory {}
 
 impl Memory {
+
+    #[cfg(unix)]
     pub fn new() -> Result<Memory, Box<dyn Error>> {
         let fd = unsafe {
             libc::open(
@@ -211,6 +217,12 @@ impl Memory {
         })
     }
 
+    #[cfg(windows)]
+    pub fn new() -> Result<Memory, Box<dyn Error>> {
+        Err(String::from("This is not a pi").into())
+    }
+
+    #[cfg(unix)]
     fn map_physical_memory(
         &self,
         bus_address: u32,
@@ -226,7 +238,7 @@ impl Memory {
                 libc::PROT_READ | libc::PROT_WRITE,
                 libc::MAP_SHARED,
                 self.fd,
-                base as i32,
+                base as _,
             )
         };
 
@@ -240,6 +252,15 @@ impl Memory {
             bus_address: bus_address,
             size: size,
         })
+    }
+
+    #[cfg(windows)]
+    fn map_physical_memory(
+        &self,
+        _bus_address: u32,
+        _size: u32,
+    ) -> Result<Allocation, Box<dyn Error>> {
+        Err(String::from("This is not a pi").into())
     }
 
     fn allocate_gpu_memory<T: Copy>(&self, count: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
