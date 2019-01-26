@@ -7,17 +7,33 @@ use crate::vc::mailbox::{constants::*, mailbox_call};
 use crate::vc::memory::{allocate_gpu_memory, GpuAllocation};
 use crate::vc::v3d::command_builder::*;
 use crate::vc::v3d::V3d;
-use nix::sys::signal;
 use std::error::Error;
 use std::fs;
 use std::thread;
 use std::time;
 
-extern fn signal_handler(_: nix::libc::c_int) {
-    // Signal handlers are special functions, only [async-signal-safe]
-    // (http://man7.org/linux/man-pages/man7/signal-safety.7.html) functions
-    // can be called in this contex.
-    panic!("Exit");
+#[cfg(unix)]
+mod signal_panic {
+    use nix::libc::c_int;
+    use nix::sys::signal;
+
+    extern "C" fn signal_handler(_: c_int) {
+        panic!("Exit");
+    }
+
+    pub fn setup() {
+        let handler = signal::SigHandler::Handler(signal_handler);
+        let action =
+            signal::SigAction::new(handler, signal::SaFlags::empty(), signal::SigSet::empty());
+        unsafe {
+            signal::sigaction(signal::Signal::SIGINT, &action).unwrap();
+        }
+    }
+}
+
+#[cfg(windows)]
+mod signal_panic {
+    pub fn setup() {}
 }
 
 fn stop_cursor_blink() -> Result<(), Box<dyn Error>> {
@@ -122,7 +138,8 @@ impl RenderState {
                 0x009E7000, 0x500009E7, // nop; nop; sbdone
             ];
 
-            let mut fragment_shader_buffer = allocate_gpu_memory::<u32>(fragment_shader.len() as u32)?;
+            let mut fragment_shader_buffer =
+                allocate_gpu_memory::<u32>(fragment_shader.len() as u32)?;
             fragment_shader_buffer
                 .as_mut_slice()
                 .copy_from_slice(fragment_shader);
@@ -211,13 +228,15 @@ impl RenderState {
                     if x == column_count - 1 && y == row_count - 1 {
                         cb.tile_coordinates(x as u8, y as u8);
                         cb.branch_to_sub_list(
-                            bin_memory.get_bus_address_l2_disabled() + ((y * column_count + x) * 32),
+                            bin_memory.get_bus_address_l2_disabled()
+                                + ((y * column_count + x) * 32),
                         );
                         cb.store_multi_sample_end();
                     } else {
                         cb.tile_coordinates(x as u8, y as u8);
                         cb.branch_to_sub_list(
-                            bin_memory.get_bus_address_l2_disabled() + ((y * column_count + x) * 32),
+                            bin_memory.get_bus_address_l2_disabled()
+                                + ((y * column_count + x) * 32),
                         );
                         cb.store_multi_sample();
                     }
@@ -244,7 +263,10 @@ impl RenderState {
 
     fn draw(&self, v3d: &mut V3d) {
         v3d.set_ct0ca(self.binning_command_buffer.get_bus_address_l2_disabled());
-        v3d.set_ct0ea(self.binning_command_buffer.get_bus_address_l2_disabled() + self.binning_command_buffer_end);
+        v3d.set_ct0ea(
+            self.binning_command_buffer.get_bus_address_l2_disabled()
+                + self.binning_command_buffer_end,
+        );
 
         while v3d.bfc() != 1 {
             //dbg!(v3d.pcs());
@@ -252,7 +274,10 @@ impl RenderState {
         v3d.set_bfc(0);
 
         v3d.set_ct1ca(self.render_command_buffer.get_bus_address_l2_disabled());
-        v3d.set_ct1ea(self.render_command_buffer.get_bus_address_l2_disabled() + self.render_command_buffer_end);
+        v3d.set_ct1ea(
+            self.render_command_buffer.get_bus_address_l2_disabled()
+                + self.render_command_buffer_end,
+        );
 
         while v3d.bfc() != 1 {}
         v3d.set_bfc(0);
@@ -262,16 +287,7 @@ impl RenderState {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-
-    let handler = signal::SigHandler::Handler(signal_handler);
-    let action = signal::SigAction::new(handler,
-        signal::SaFlags::empty(),
-        signal::SigSet::empty(),
-    );
-    unsafe {
-        signal::sigaction(signal::Signal::SIGINT, &action).unwrap();
-    }
-
+    signal_panic::setup();
     stop_cursor_blink()?;
 
     let mut fb = Framebuffer::new()?;
