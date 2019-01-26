@@ -2,13 +2,14 @@ mod input;
 mod vc;
 
 use crate::input::Input;
-use crate::vc::{
-    framebuffer::Framebuffer,
-    mailbox::{constants::*, mailbox_call},
-    memory::{allocate_gpu_memory, GpuAllocation},
-    v3d::{command_builder::*, V3d},
-};
-use std::{error::Error, fs, thread, time};
+use crate::vc::framebuffer::Framebuffer;
+use crate::vc::mailbox::{constants::*, mailbox_call};
+use crate::vc::memory::{allocate_gpu_memory, GpuAllocation};
+use crate::vc::v3d::{command_builder::*, V3d};
+use std::error::Error;
+use std::fs;
+use std::thread;
+use std::time;
 
 #[cfg(unix)]
 mod signal_panic {
