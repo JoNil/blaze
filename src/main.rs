@@ -2,31 +2,32 @@ mod input;
 mod vc;
 
 use crate::input::Input;
-use crate::vc::framebuffer::Framebuffer;
-use crate::vc::mailbox::{constants::*, mailbox_call};
-use crate::vc::memory::{allocate_gpu_memory, GpuAllocation};
-use crate::vc::v3d::command_builder::*;
-use crate::vc::v3d::V3d;
-use std::error::Error;
-use std::fs;
-use std::thread;
-use std::time;
+use crate::vc::{
+    framebuffer::Framebuffer,
+    mailbox::{constants::*, mailbox_call},
+    memory::{allocate_gpu_memory, GpuAllocation},
+    v3d::{command_builder::*, V3d},
+};
+use std::{error::Error, fs, thread, time};
 
 #[cfg(unix)]
 mod signal_panic {
-    use nix::libc::c_int;
-    use nix::sys::signal;
+    use libc;
+    use std::{mem, ptr};
 
-    extern "C" fn signal_handler(_: c_int) {
+    extern "C" fn signal_handler(_: libc::c_int) {
         panic!("Exit");
     }
 
     pub fn setup() {
-        let handler = signal::SigHandler::Handler(signal_handler);
-        let action =
-            signal::SigAction::new(handler, signal::SaFlags::empty(), signal::SigSet::empty());
         unsafe {
-            signal::sigaction(signal::Signal::SIGINT, &action).unwrap();
+            let action = libc::sigaction {
+                sa_sigaction: signal_handler as extern "C" fn(libc::c_int) as libc::sighandler_t,
+                sa_mask: mem::zeroed(),
+                sa_flags: 0,
+                sa_restorer: None,
+            };
+            libc::sigaction(libc::SIGINT, &action as *const _, ptr::null_mut());
         }
     }
 }

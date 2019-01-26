@@ -198,7 +198,6 @@ pub struct Memory {
 unsafe impl Send for Memory {}
 
 impl Memory {
-
     #[cfg(unix)]
     pub fn new() -> Result<Memory, Box<dyn Error>> {
         let fd = unsafe {
