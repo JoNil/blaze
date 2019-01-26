@@ -1,23 +1,29 @@
-use std::process::{Command, Stdio};
-use std::error::Error;
 use std::env;
+use std::error::Error;
+use std::process::{Command, Stdio};
 
 // Prerequisites
 // rustup target add armv7-unknown-linux-gnueabihf
 // sudo apt-get install gcc-arm-linux-gnueabihf
 
 fn main() -> Result<(), Box<dyn Error>> {
-    
     env::set_current_dir("../")?;
 
     Command::new("cargo")
-        .args(&["build", "--release", "--target=armv7-unknown-linux-gnueabihf"])
+        .args(&[
+            "build",
+            "--release",
+            "--target=armv7-unknown-linux-gnueabihf",
+        ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()?;
 
     Command::new("scp")
-        .args(&["target/armv7-unknown-linux-gnueabihf/release/rpi_gpu_game", "pi@192.168.0.35:~/"])
+        .args(&[
+            "target/armv7-unknown-linux-gnueabihf/release/rpi_gpu_game",
+            "pi@192.168.0.35:~/",
+        ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()?;
