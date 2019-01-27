@@ -1,4 +1,4 @@
 all:
-	cargo build --release && sudo target/release/rpi_gpu_game
+	cargo build --release && sudo target/release/pyre 
 
 .PHONY: all

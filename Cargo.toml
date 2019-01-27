@@ -1,5 +1,5 @@
 [package]
-name = "rpi_gpu_game"
+name = "pyre"
 version = "0.1.0"
 authors = ["Jonathan"]
 edition = "2018"
