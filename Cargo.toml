@@ -1,5 +1,5 @@
 [package]
-name = "pyre"
+name = "blaze"
 version = "0.1.0"
 authors = ["Jonathan"]
 edition = "2018"
