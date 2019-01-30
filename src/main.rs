@@ -221,6 +221,8 @@ impl RenderState {
             );
 
             cb.tile_coordinates(0, 0);
+
+            // Denna är suspekt!
             cb.store_tile_buffer_general(0, 0, 0);
 
             let column_count = (fb.width() + 63) / 64;
@@ -295,12 +297,20 @@ impl RenderState {
 
         println!("3");
 
-        while v3d.rfc() != 1 {}
+        dbg!(v3d.rfc());
+
+        let mut count = 0;
+
+        while v3d.rfc() != 1 {
+            count += 1;
+        }
         v3d.set_rfc(1);
+
+        dbg!(count);
 
         println!("4");
 
-        while v3d.pcs() != 1 {}
+        loop {}
 
         println!("5");
     }
