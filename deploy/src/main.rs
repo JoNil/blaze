@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Command::new("scp")
         .args(&[
-            "target/armv7-unknown-linux-gnueabihf/release/rpi_gpu_game",
+            "target/armv7-unknown-linux-gnueabihf/release/blaze",
             "pi@192.168.0.35:~/",
         ])
         .stdout(Stdio::inherit())
@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .output()?;
 
     Command::new("ssh")
-        .args(&["-t", "pi@192.168.0.35", "sudo", "./rpi_gpu_game"])
+        .args(&["-t", "pi@192.168.0.35", "sudo", "./blaze"])
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
