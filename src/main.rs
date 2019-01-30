@@ -73,19 +73,19 @@ struct RenderState {
 
 impl RenderState {
     fn new(fb: &Framebuffer) -> Result<RenderState, Box<dyn Error>> {
-        let mut message: [u32; 7] = [
-            7 * 4,
+        let mut message: [u32; 17] = [
+            17 * 4,
             MBOX_REQUEST,
-            //MBOX_TAG_SET_CLOCK_RATE,
-            //8,
-            //8,
-            //CLK_CORE_ID,
-            //250 * 1000 * 1000,
-            //MBOX_TAG_SET_CLOCK_RATE,
-            //8,
-            //8,
-            //CLK_V3D_ID,
-            //250 * 1000 * 1000,
+            MBOX_TAG_SET_CLOCK_RATE,
+            8,
+            8,
+            CLK_CORE_ID,
+            400 * 1000 * 1000,
+            MBOX_TAG_SET_CLOCK_RATE,
+            8,
+            8,
+            CLK_V3D_ID,
+            300 * 1000 * 1000,
             MBOX_TAG_ENABLE_QPU,
             4,
             4,
