@@ -69,19 +69,19 @@ struct RenderState {
 
 impl RenderState {
     fn new(fb: &Framebuffer) -> Result<RenderState, Box<dyn Error>> {
-        let mut message: [u32; 17] = [
-            17 * 4,
+        let mut message: [u32; 7] = [
+            7 * 4,
             MBOX_REQUEST,
-            MBOX_TAG_SET_CLOCK_RATE,
-            8,
-            8,
-            CLK_CORE_ID,
-            400 * 1000 * 1000,
-            MBOX_TAG_SET_CLOCK_RATE,
-            8,
-            8,
-            CLK_V3D_ID,
-            300 * 1000 * 1000,
+            //MBOX_TAG_SET_CLOCK_RATE,
+            //8,
+            //8,
+            //CLK_CORE_ID,
+            //250 * 1000 * 1000,
+            //MBOX_TAG_SET_CLOCK_RATE,
+            //8,
+            //8,
+            //CLK_V3D_ID,
+            //250 * 1000 * 1000,
             MBOX_TAG_ENABLE_QPU,
             4,
             4,
@@ -171,6 +171,7 @@ impl RenderState {
             let mut binning_command_buffer = allocate_gpu_memory::<u8>(4096)?;
 
             let mut cb = CommandBuilder::new(binning_command_buffer.as_mut_slice());
+
             cb.tile_binning_mode_configuration(
                 bin_memory.get_bus_address_l2_disabled(),
                 bin_memory.len(),
@@ -264,16 +265,27 @@ impl RenderState {
     }
 
     fn draw(&self, v3d: &mut V3d) {
+        
+        dbg!(v3d.bpcs());
+        
         v3d.set_ct0ca(self.binning_command_buffer.get_bus_address_l2_disabled());
         v3d.set_ct0ea(
             self.binning_command_buffer.get_bus_address_l2_disabled()
                 + self.binning_command_buffer_end,
         );
 
+        let mut count = 0;
+
         while v3d.bfc() != 1 {
-            //dbg!(v3d.pcs());
+            count += 1;
         }
-        v3d.set_bfc(0);
+        v3d.set_bfc(1);
+
+        dbg!(count);
+
+        dbg!(v3d.bpcs());
+
+        println!("2");
 
         v3d.set_ct1ca(self.render_command_buffer.get_bus_address_l2_disabled());
         v3d.set_ct1ea(
@@ -281,10 +293,16 @@ impl RenderState {
                 + self.render_command_buffer_end,
         );
 
-        while v3d.bfc() != 1 {}
-        v3d.set_bfc(0);
+        println!("3");
+
+        while v3d.rfc() != 1 {}
+        v3d.set_rfc(1);
+
+        println!("4");
 
         while v3d.pcs() != 1 {}
+
+        println!("5");
     }
 }
 

@@ -17,7 +17,7 @@ macro_rules! impl_reg {
             }
         }
 
-        pub fn $set(&self, value: u32) {
+        pub fn $set(&mut self, value: u32) {
             unsafe {
                 (self.allocation.address as *mut u32)
                     .offset($offset as isize / 4)
