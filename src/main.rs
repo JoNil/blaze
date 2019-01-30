@@ -269,12 +269,17 @@ impl RenderState {
     fn draw(&self, v3d: &mut V3d) {
         
         dbg!(v3d.bpcs());
+
+        dbg!(v3d.set_ct0cs(0xffff));
+        dbg!(v3d.ct0cs());
         
         v3d.set_ct0ca(self.binning_command_buffer.get_bus_address_l2_disabled());
         v3d.set_ct0ea(
             self.binning_command_buffer.get_bus_address_l2_disabled()
                 + self.binning_command_buffer_end,
         );
+
+        dbg!(v3d.ct0cs());
 
         let mut count = 0;
 
@@ -283,9 +288,13 @@ impl RenderState {
         }
         v3d.set_bfc(1);
 
+        dbg!(v3d.ct0cs());
         dbg!(count);
 
         dbg!(v3d.bpcs());
+
+        dbg!(v3d.set_ct1cs(0xffff));
+        dbg!(v3d.ct1cs());
 
         println!("2");
 
@@ -294,6 +303,8 @@ impl RenderState {
             self.render_command_buffer.get_bus_address_l2_disabled()
                 + self.render_command_buffer_end,
         );
+
+        dbg!(v3d.ct1cs());
 
         println!("3");
 
@@ -306,6 +317,7 @@ impl RenderState {
         }
         v3d.set_rfc(1);
 
+        dbg!(v3d.ct1cs());
         dbg!(count);
 
         println!("4");
