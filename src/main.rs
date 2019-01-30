@@ -312,7 +312,15 @@ impl RenderState {
 
         let mut count = 0;
 
+        let mut last_address = 0;
+
         while v3d.rfc() != 1 {
+            {
+                let address = v3d.ct1ca();
+                if address != last_address {
+                    last_address = dbg!(address);
+                }
+            }
             count += 1;
         }
         v3d.set_rfc(1);
