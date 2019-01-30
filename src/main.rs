@@ -5,11 +5,13 @@ use crate::input::Input;
 use crate::vc::framebuffer::Framebuffer;
 use crate::vc::mailbox::{constants::*, mailbox_call};
 use crate::vc::memory::{allocate_gpu_memory, GpuAllocation};
+use static_assertions::const_assert;
 use crate::vc::v3d::{command_builder::*, V3d};
 use std::error::Error;
 use std::fs;
 use std::thread;
 use std::time;
+use std::mem;
 
 #[cfg(unix)]
 mod signal_panic {
@@ -54,6 +56,8 @@ struct Vertex {
     varying_g: f32,
     varying_b: f32,
 }
+
+const_assert!(Vertex; mem::size_of::<Vertex>() == 24);
 
 struct RenderState {
     vertex_buffer: GpuAllocation<Vertex>,
