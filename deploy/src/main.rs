@@ -19,10 +19,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         .stderr(Stdio::inherit())
         .output()?;
 
-    Command::new("scp")
+    Command::new("robocopy.exe")
         .args(&[
-            "target/armv7-unknown-linux-gnueabihf/release/blaze",
-            "pi@192.168.0.35:~/",
+            "/njh", "/njs", "/ndl", "/nc", "/ns",
+            "target/armv7-unknown-linux-gnueabihf/release",
+            r#"\\192.168.0.35\pi"#,
+            "blaze"
         ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
