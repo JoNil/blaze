@@ -7,6 +7,9 @@ use std::process::{Command, Stdio};
 // sudo apt-get install gcc-arm-linux-gnueabihf
 
 fn main() -> Result<(), Box<dyn Error>> {
+
+    let ip = "10.0.0.47";
+    
     env::set_current_dir("../")?;
 
     Command::new("cargo")
@@ -23,7 +26,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .args(&[
             "/njh", "/njs", "/ndl", "/nc", "/ns",
             "target/armv7-unknown-linux-gnueabihf/release",
-            r#"\\192.168.0.35\pi"#,
+            &format!(r#"\\{}\pi"#, ip),
             "blaze"
         ])
         .stdout(Stdio::inherit())
@@ -31,7 +34,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .output()?;
 
     Command::new("ssh")
-        .args(&["-t", "pi@192.168.0.35", "sudo", "./blaze"])
+        .args(&["-t", &format!("pi@{}", ip), "sudo", "./blaze"])
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
