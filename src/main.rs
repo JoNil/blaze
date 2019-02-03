@@ -186,7 +186,7 @@ impl RenderState {
             );
 
             cb.start_tile_binning();
-            cb.increment_semaphore();
+            //cb.increment_semaphore();
 
             cb.clip_window(0, 0, fb.width() as u16, fb.height() as u16);
 
@@ -213,7 +213,7 @@ impl RenderState {
 
             let mut cb = CommandBuilder::new(render_command_buffer.as_mut_slice());
 
-            cb.wait_on_semaphore();
+            //cb.wait_on_semaphore();
 
             cb.clear_colors(0xff240A30ff240A30, 0, 0, 0);
 
@@ -271,19 +271,30 @@ impl RenderState {
     }
 
     fn draw(&self, v3d: &mut V3d) {
-        
-        dbg!(v3d.bpcs());
 
-        dbg!(v3d.set_ct0cs(0xffff));
+        dbg!(v3d.errstat());
+
         dbg!(v3d.ct0cs());
+        dbg!(v3d.ct1cs());
+
+        // Reset
+        v3d.set_ct0cs(0x8000);
+        v3d.set_ct1cs(0x8000);
+
+        v3d.set_ct0cs(0x0020);
+        v3d.set_ct1cs(0x0020);
+
+        v3d.set_ct0cs(0x0010);
+        v3d.set_ct1cs(0x0010);
+
+        dbg!(v3d.ct0cs());
+        dbg!(v3d.ct1cs());
         
         v3d.set_ct0ca(self.binning_command_buffer.get_bus_address_l2_disabled());
         v3d.set_ct0ea(
             self.binning_command_buffer.get_bus_address_l2_disabled()
                 + self.binning_command_buffer_end,
         );
-
-        dbg!(v3d.ct0cs());
 
         let mut count = 0;
 
@@ -292,13 +303,8 @@ impl RenderState {
         }
         v3d.set_bfc(1);
 
-        dbg!(v3d.ct0cs());
         dbg!(count);
-
         dbg!(v3d.bpcs());
-
-        dbg!(v3d.set_ct1cs(0xffff));
-        dbg!(v3d.ct1cs());
 
         println!("2");
 
@@ -308,11 +314,7 @@ impl RenderState {
                 + self.render_command_buffer_end,
         );
 
-        dbg!(v3d.ct1cs());
-
         println!("3");
-
-        dbg!(v3d.rfc());
 
         let mut count = 0;
 
@@ -329,7 +331,6 @@ impl RenderState {
         }
         v3d.set_rfc(1);
 
-        dbg!(v3d.ct1cs());
         dbg!(count);
 
         println!("4");

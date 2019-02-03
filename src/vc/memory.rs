@@ -135,6 +135,10 @@ impl Allocation {
     pub fn get_bus_address_l2_enabled(&self) -> u32 {
         self.bus_address | BUS_ADDRESSES_L2CACHE_ENABLED
     }
+
+    pub fn get_bus_address(&self) -> u32 {
+        self.bus_address
+    }
 }
 
 impl Drop for Allocation {
@@ -187,6 +191,10 @@ impl<T: Copy> GpuAllocation<T> {
 
     pub fn get_bus_address_l2_enabled(&self) -> u32 {
         self.gpu_memory.bus_address | BUS_ADDRESSES_L2CACHE_ENABLED
+    }
+
+    pub fn get_bus_address(&self) -> u32 {
+        self.gpu_memory.bus_address
     }
 }
 
@@ -266,6 +274,8 @@ impl Memory {
         let size = count * mem::size_of::<T>() as u32;
 
         let gpu_memory = GpuMemory::new(size)?;
+        assert!(gpu_memory.bus_address & 0xF == 0);
+
         let allocation = self.map_physical_memory(gpu_memory.bus_address, size)?;
 
         Ok(GpuAllocation {
