@@ -8,7 +8,7 @@ use std::process::{Command, Stdio};
 
 fn main() -> Result<(), Box<dyn Error>> {
 
-    let ip = "10.0.0.47";
+    let ip = "192.168.0.35";
     
     env::set_current_dir("../")?;
 
