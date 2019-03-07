@@ -154,13 +154,13 @@ impl Drop for Allocation {
 }
 
 #[derive(Debug)]
-pub struct GpuAllocation<T: Copy> {
+pub struct GpuAllocation<T: Copy + Default> {
     gpu_memory: GpuMemory,
     allocation: Allocation,
     _marker: PhantomData<T>,
 }
 
-impl<T: Copy> GpuAllocation<T> {
+impl<T: Copy + Default> GpuAllocation<T> {
     pub fn as_slice(&self) -> &[T] {
         assert!(self.allocation.size % mem::size_of::<T>() as u32 == 0);
         unsafe {
@@ -270,7 +270,7 @@ impl Memory {
         Err(String::from("This is not a pi").into())
     }
 
-    fn allocate_gpu_memory<T: Copy>(&self, count: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
+    fn allocate_gpu_memory<T: Copy + Default>(&self, count: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
         let size = count * mem::size_of::<T>() as u32;
 
         let gpu_memory = GpuMemory::new(size)?;
@@ -278,11 +278,15 @@ impl Memory {
 
         let allocation = self.map_physical_memory(gpu_memory.bus_address, size)?;
 
-        Ok(GpuAllocation {
+        let mut gpu_allocation : GpuAllocation<T> = GpuAllocation {
             gpu_memory: gpu_memory,
             allocation: allocation,
             _marker: PhantomData,
-        })
+        };
+
+        gpu_allocation.as_mut_slice().iter_mut().for_each(|v| *v = Default::default());
+
+        Ok(gpu_allocation)
     }
 }
 
@@ -302,6 +306,6 @@ pub fn map_physical_memory(address: u32, size: u32) -> Result<Allocation, Box<dy
     MEMORY.lock().unwrap().map_physical_memory(address, size)
 }
 
-pub fn allocate_gpu_memory<T: Copy>(count: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
+pub fn allocate_gpu_memory<T: Copy + Default>(count: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
     MEMORY.lock().unwrap().allocate_gpu_memory(count)
 }

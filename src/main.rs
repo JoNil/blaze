@@ -46,7 +46,7 @@ fn stop_cursor_blink() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 struct Vertex {
     x: u16, // X In 12.4 Fixed Point
     y: u16, // Y In 12.4 Fixed Point

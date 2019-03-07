@@ -40,7 +40,7 @@ pub const NV_SHADER_STATE_FLAG_ENABLE_CLIPPING: u8 = 0x4;
 pub const NV_SHADER_STATE_FLAG_CLIP_COORDINATES_HEADER_INCLUDED_IN_SHADED_VERTEX_DATA: u8 = 0x8;
 
 #[repr(C, align(16))]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct NvShaderState {
     pub flags: u8,
     pub stride: u8,
