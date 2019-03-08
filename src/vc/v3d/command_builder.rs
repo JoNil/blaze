@@ -290,17 +290,17 @@ impl<'a> CommandBuilder<'a> {
         self.cursor.write_u8(clearstencil).unwrap();
     }
 
-    pub fn tile_coordinates(&mut self, column: u8, row: u8) {
+    pub fn tile_coordinates(&mut self, column: i8, row: i8) {
         self.cursor.write_u8(CMD_TILE_COORDINATES).unwrap();
-        self.cursor.write_u8(column).unwrap();
-        self.cursor.write_u8(row).unwrap();
+        self.cursor.write_i8(column).unwrap();
+        self.cursor.write_i8(row).unwrap();
     }
 
     pub fn store_tile_buffer_general(&mut self, flags16: u16, flags32: u32, address: u32) {
         self.cursor.write_u8(CMD_STORE_TILE_BUFFER_GENERAL).unwrap();
         self.cursor.write_u16::<LittleEndian>(flags16).unwrap();
         self.cursor
-            .write_u32::<LittleEndian>(flags32 | address)
+            .write_u32::<LittleEndian>(flags32 << 24 | address)
             .unwrap();
     }
 }
