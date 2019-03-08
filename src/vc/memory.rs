@@ -186,14 +186,23 @@ impl<T: Copy + Default> GpuAllocation<T> {
     }
 
     pub fn get_bus_address_l2_disabled(&self) -> u32 {
+
+        assert!(self.gpu_memory.bus_address % 16 == 0);
+
         self.gpu_memory.bus_address | BUS_ADDRESSES_L2CACHE_DISABLED
     }
 
     pub fn get_bus_address_l2_enabled(&self) -> u32 {
+
+        assert!(self.gpu_memory.bus_address % 16 == 0);
+
         self.gpu_memory.bus_address | BUS_ADDRESSES_L2CACHE_ENABLED
     }
 
     pub fn get_bus_address(&self) -> u32 {
+
+        assert!(self.gpu_memory.bus_address % 16 == 0);
+
         self.gpu_memory.bus_address
     }
 }

@@ -172,7 +172,7 @@ impl RenderState {
         let bin_base = allocate_gpu_memory::<u8>(48 * (4096 / 32) * (4096 / 32))?;
 
         let (binning_command_buffer, binning_command_buffer_end) = {
-            let mut binning_command_buffer = allocate_gpu_memory::<u8>(4096)?;
+            let mut binning_command_buffer = allocate_gpu_memory::<u8>(16 * 1024)?;
 
             let mut cb = CommandBuilder::new(binning_command_buffer.as_mut_slice());
 
@@ -209,7 +209,7 @@ impl RenderState {
         };
 
         let (render_command_buffer, render_command_buffer_end) = {
-            let mut render_command_buffer = allocate_gpu_memory::<u8>(4096)?;
+            let mut render_command_buffer = allocate_gpu_memory::<u8>(16 * 1024)?;
 
             let mut cb = CommandBuilder::new(render_command_buffer.as_mut_slice());
 
@@ -225,24 +225,29 @@ impl RenderState {
             );
 
             cb.tile_coordinates(0, 0);
+            cb.store_tile_buffer_general(STORE_TILE_BUFFER_GENERAL_FLAGS16_STORE_COLOR, 0, fb.allocation().get_bus_address_l2_disabled());
 
-            // Denna är suspekt!
-            cb.store_tile_buffer_general(0, 0, 0);
-
-            let column_count = (fb.width() + 63) / 64;
-            let row_count = (fb.height() + 63) / 64;
+            let column_count = (fb.width() + 63) / 64 - 1;
+            let row_count = (fb.height() + 63) / 64 - 1;
 
             for x in 0..column_count {
                 for y in 0..row_count {
+
+                    dbg!(x);
+                    dbg!(y);
+
                     if x == column_count - 1 && y == row_count - 1 {
-                        cb.tile_coordinates(x as u8, y as u8);
+
+                        eprintln!("End");
+
+                        cb.tile_coordinates(x as i8, y as i8);
                         cb.branch_to_sub_list(
                             bin_memory.get_bus_address_l2_disabled()
                                 + ((y * column_count + x) * 32),
                         );
                         cb.store_multi_sample_end();
                     } else {
-                        cb.tile_coordinates(x as u8, y as u8);
+                        cb.tile_coordinates(x as i8, y as i8);
                         cb.branch_to_sub_list(
                             bin_memory.get_bus_address_l2_disabled()
                                 + ((y * column_count + x) * 32),
