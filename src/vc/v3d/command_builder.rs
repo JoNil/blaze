@@ -300,7 +300,7 @@ impl<'a> CommandBuilder<'a> {
         self.cursor.write_u8(CMD_STORE_TILE_BUFFER_GENERAL).unwrap();
         self.cursor.write_u16::<LittleEndian>(flags16).unwrap();
         self.cursor
-            .write_u32::<LittleEndian>(flags32 << 24 | address)
+            .write_u32::<LittleEndian>(flags32 | address)
             .unwrap();
     }
 }
