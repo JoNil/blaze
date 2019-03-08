@@ -233,10 +233,10 @@ impl<'a> CommandBuilder<'a> {
         self.cursor.write_u16::<LittleEndian>(height).unwrap();
     }
 
-    pub fn viewport_offset(&mut self, x: u16, y: u16) {
+    pub fn viewport_offset(&mut self, x: i16, y: i16) {
         self.cursor.write_u8(CMD_VIEWPORT_OFFSET).unwrap();
-        self.cursor.write_u16::<LittleEndian>(x).unwrap();
-        self.cursor.write_u16::<LittleEndian>(y).unwrap();
+        self.cursor.write_i16::<LittleEndian>(x).unwrap();
+        self.cursor.write_i16::<LittleEndian>(y).unwrap();
     }
 
     pub fn tile_binning_mode_configuration(
