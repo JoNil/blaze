@@ -11,6 +11,7 @@ use std::error::Error;
 use std::fs;
 use std::thread;
 use std::time;
+use rand::random;
 use std::mem;
 
 #[cfg(unix)]
@@ -193,7 +194,7 @@ impl RenderState {
             cb.configuration_bits(
                 CONFIGURATION_BITS_FLAGS8_ENABLE_FORWARD_FACING_PRIMITIVE
                     | CONFIGURATION_BITS_FLAGS8_ENABLE_REVERSE_FACING_PRIMITIVE,
-                CONFIGURATION_BITS_FLAGS16_EARLY_Z_UPDATES_ENABLE,
+                0,
             );
 
             cb.viewport_offset(0, 0);
@@ -215,7 +216,10 @@ impl RenderState {
 
             //cb.wait_on_semaphore();
 
-            cb.clear_colors(0xff240A30ff240A30, 0, 0, 0);
+
+            let color = (random::<u32>() | 0xff000000) as u64;
+
+            cb.clear_colors((color << 32) | color, 0, 0, 0);
 
             cb.tile_rendering_mode_configuration(
                 fb.allocation().get_bus_address_l2_disabled(),
