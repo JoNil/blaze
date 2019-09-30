@@ -129,6 +129,7 @@ impl RenderState {
 
             let mut vertex_buffer = allocate_gpu_memory::<Vertex>(vertices.len() as u32)?;
             vertex_buffer.as_mut_slice().copy_from_slice(vertices);
+            dbg!(vertex_buffer.get_bus_address_l2_disabled());
             vertex_buffer
         };
 
@@ -150,6 +151,7 @@ impl RenderState {
             fragment_shader_buffer
                 .as_mut_slice()
                 .copy_from_slice(fragment_shader);
+            dbg!(fragment_shader_buffer.get_bus_address_l2_disabled());
             fragment_shader_buffer
         };
 
@@ -166,6 +168,8 @@ impl RenderState {
                 vertex_data_address: vertex_buffer.get_bus_address_l2_disabled(),
             };
 
+            dbg!(shader_program.get_bus_address_l2_disabled());
+
             shader_program
         };
 
@@ -174,6 +178,11 @@ impl RenderState {
 
         let binning_command_buffer = allocate_gpu_memory::<u8>(1024 * 1024)?;
         let render_command_buffer = allocate_gpu_memory::<u8>(16 * 1024)?;
+
+        dbg!(bin_memory.get_bus_address_l2_disabled());
+        dbg!(bin_base.get_bus_address_l2_disabled());
+        dbg!(binning_command_buffer.get_bus_address_l2_disabled());
+        dbg!(render_command_buffer.get_bus_address_l2_disabled());
 
         Ok(RenderState {
             vertex_buffer,
