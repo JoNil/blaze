@@ -98,8 +98,8 @@ impl RenderState {
         let vertex_buffer = {
             let vertices = &[
                 Vertex {
-                    x: 320 * 16,
-                    y: 32 * 16,
+                    x: 100 * 16,
+                    y: 50 * 16,
                     z: 1.0,
                     one_over_w: 1.0,
                     varying_r: 1.0,
@@ -107,8 +107,8 @@ impl RenderState {
                     varying_b: 0.0,
                 },
                 Vertex {
-                    x: 32 * 16,
-                    y: 448 * 16,
+                    x: 50 * 16,
+                    y: 100 * 16,
                     z: 1.0,
                     one_over_w: 1.0,
                     varying_r: 0.0,
@@ -116,8 +116,8 @@ impl RenderState {
                     varying_b: 0.0,
                 },
                 Vertex {
-                    x: 608 * 16,
-                    y: 448 * 16,
+                    x: 100 * 16,
+                    y: 100 * 16,
                     z: 1.0,
                     one_over_w: 1.0,
                     varying_r: 0.0,
@@ -168,11 +168,11 @@ impl RenderState {
             shader_program
         };
 
-        let bin_memory = allocate_gpu_memory::<u8>(4 * 1024 * 1024)?;
+        let bin_memory = allocate_gpu_memory::<u8>(1 * 1024 * 1024)?;
         let bin_base = allocate_gpu_memory::<u8>(48 * (4096 / 32) * (4096 / 32))?;
 
         let (binning_command_buffer, binning_command_buffer_end) = {
-            let mut binning_command_buffer = allocate_gpu_memory::<u8>(16 * 1024)?;
+            let mut binning_command_buffer = allocate_gpu_memory::<u8>(1024 * 1024)?;
 
             let mut cb = CommandBuilder::new(binning_command_buffer.as_mut_slice());
 
@@ -180,8 +180,8 @@ impl RenderState {
                 bin_memory.get_bus_address_l2_disabled(),
                 bin_memory.len(),
                 bin_base.get_bus_address_l2_disabled(),
-                ((fb.width() + 63) / 64) as u8,
-                ((fb.height() + 63) / 64) as u8,
+                ((fb.width() + 63) / 64 + 1) as u8,
+                ((fb.height() + 63) / 64 + 1) as u8,
                 TILE_BINNING_FLAGS_AUTO_INITIALISE_TILE_STATE_DATA_ARRAY,
             );
 
@@ -227,19 +227,12 @@ impl RenderState {
             cb.tile_coordinates(0, 0);
             cb.store_tile_buffer_general(STORE_TILE_BUFFER_GENERAL_FLAGS16_STORE_COLOR, 0, fb.allocation().get_bus_address_l2_disabled());
 
-            let column_count = (fb.width() + 63) / 64 - 1;
-            let row_count = (fb.height() + 63) / 64 - 1;
+            let column_count = (fb.width() + 63) / 64;
+            let row_count = (fb.height() + 63) / 64;
 
             for x in 0..column_count {
                 for y in 0..row_count {
-
-                    dbg!(x);
-                    dbg!(y);
-
                     if x == column_count - 1 && y == row_count - 1 {
-
-                        eprintln!("End");
-
                         cb.tile_coordinates(x as i8, y as i8);
                         cb.branch_to_sub_list(
                             bin_memory.get_bus_address_l2_disabled()
