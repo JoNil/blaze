@@ -99,8 +99,8 @@ impl RenderState {
         let vertex_buffer = {
             let vertices = &[
                 Vertex {
-                    x: 100 * 16,
-                    y: 50 * 16,
+                    x: 320 * 16,
+                    y: 32 * 16,
                     z: 1.0,
                     one_over_w: 1.0,
                     varying_r: 1.0,
@@ -108,8 +108,8 @@ impl RenderState {
                     varying_b: 0.0,
                 },
                 Vertex {
-                    x: 50 * 16,
-                    y: 100 * 16,
+                    x: 32 * 16,
+                    y: 448 * 16,
                     z: 1.0,
                     one_over_w: 1.0,
                     varying_r: 0.0,
@@ -117,8 +117,8 @@ impl RenderState {
                     varying_b: 0.0,
                 },
                 Vertex {
-                    x: 100 * 16,
-                    y: 100 * 16,
+                    x: 608 * 16,
+                    y: 448 * 16,
                     z: 1.0,
                     one_over_w: 1.0,
                     varying_r: 0.0,
@@ -169,8 +169,8 @@ impl RenderState {
             shader_program
         };
 
-        let bin_memory = allocate_gpu_memory::<u8>(1 * 1024 * 1024)?;
-        let bin_base = allocate_gpu_memory::<u8>(48 * (4096 / 32) * (4096 / 32))?;
+        let bin_memory = allocate_gpu_memory::<u8>(4 * 1024 * 1024)?;
+        let bin_base = allocate_gpu_memory::<u8>(4 * 1024 * 1024)?;
 
         let binning_command_buffer = allocate_gpu_memory::<u8>(1024 * 1024)?;
         let render_command_buffer = allocate_gpu_memory::<u8>(16 * 1024)?;
@@ -278,6 +278,22 @@ impl RenderState {
         dbg!(v3d.ct0cs());
         dbg!(v3d.ct1cs());
 
+        dbg!(v3d.pcs());
+
+        dbg!(v3d.sqrsv0());
+        dbg!(v3d.sqrsv1());
+
+        dbg!(v3d.l2cactl());
+
+        dbg!(v3d.set_l2cactl(2));
+        dbg!(v3d.set_l2cactl(4));
+
+        dbg!(v3d.l2cactl());
+
+        dbg!(v3d.intctl());
+        dbg!(v3d.set_intctl(0xf));
+        dbg!(v3d.intctl());
+
         // Reset
         v3d.set_ct0cs(0x8000);
         v3d.set_ct1cs(0x8000);
@@ -291,15 +307,20 @@ impl RenderState {
         dbg!(v3d.ct0cs());
         dbg!(v3d.ct1cs());
 
+        dbg!(v3d.bpcs());
+
         v3d.set_ct0ca(self.binning_command_buffer.get_bus_address_l2_disabled());
         v3d.set_ct0ea(
             self.binning_command_buffer.get_bus_address_l2_disabled()
                 + self.binning_command_buffer_end,
         );
 
+        dbg!(v3d.bpcs());
+
         let mut count = 0;
 
         while v3d.bfc() != 1 {
+            dbg!(v3d.pcs());
             count += 1;
         }
         v3d.set_bfc(1);
@@ -308,6 +329,8 @@ impl RenderState {
         dbg!(v3d.bpcs());
 
         println!("2");
+
+        dbg!(v3d.pcs());
 
         v3d.set_ct1ca(self.render_command_buffer.get_bus_address_l2_disabled());
         v3d.set_ct1ea(
@@ -325,6 +348,7 @@ impl RenderState {
             {
                 let address = v3d.ct1ca();
                 if address != last_address {
+                    dbg!(v3d.pcs());
                     last_address = dbg!(address);
                 }
             }
@@ -335,6 +359,7 @@ impl RenderState {
         dbg!(count);
 
         println!("4");
+        dbg!(v3d.bpcs());
 
         thread::sleep(time::Duration::from_millis(1000));
 
