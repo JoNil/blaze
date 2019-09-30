@@ -186,21 +186,18 @@ impl<T: Copy + Default> GpuAllocation<T> {
     }
 
     pub fn get_bus_address_l2_disabled(&self) -> u32 {
-
         assert!(self.gpu_memory.bus_address % 16 == 0);
 
         self.gpu_memory.bus_address | BUS_ADDRESSES_L2CACHE_DISABLED
     }
 
     pub fn get_bus_address_l2_enabled(&self) -> u32 {
-
         assert!(self.gpu_memory.bus_address % 16 == 0);
 
         self.gpu_memory.bus_address | BUS_ADDRESSES_L2CACHE_ENABLED
     }
 
     pub fn get_bus_address(&self) -> u32 {
-
         assert!(self.gpu_memory.bus_address % 16 == 0);
 
         self.gpu_memory.bus_address
@@ -279,7 +276,10 @@ impl Memory {
         Err(String::from("This is not a pi").into())
     }
 
-    fn allocate_gpu_memory<T: Copy + Default>(&self, count: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
+    fn allocate_gpu_memory<T: Copy + Default>(
+        &self,
+        count: u32,
+    ) -> Result<GpuAllocation<T>, Box<dyn Error>> {
         let size = count * mem::size_of::<T>() as u32;
 
         let gpu_memory = GpuMemory::new(size)?;
@@ -287,13 +287,16 @@ impl Memory {
 
         let allocation = self.map_physical_memory(gpu_memory.bus_address, size)?;
 
-        let mut gpu_allocation : GpuAllocation<T> = GpuAllocation {
+        let mut gpu_allocation: GpuAllocation<T> = GpuAllocation {
             gpu_memory: gpu_memory,
             allocation: allocation,
             _marker: PhantomData,
         };
 
-        gpu_allocation.as_mut_slice().iter_mut().for_each(|v| *v = Default::default());
+        gpu_allocation
+            .as_mut_slice()
+            .iter_mut()
+            .for_each(|v| *v = Default::default());
 
         Ok(gpu_allocation)
     }
@@ -315,6 +318,8 @@ pub fn map_physical_memory(address: u32, size: u32) -> Result<Allocation, Box<dy
     MEMORY.lock().unwrap().map_physical_memory(address, size)
 }
 
-pub fn allocate_gpu_memory<T: Copy + Default>(count: u32) -> Result<GpuAllocation<T>, Box<dyn Error>> {
+pub fn allocate_gpu_memory<T: Copy + Default>(
+    count: u32,
+) -> Result<GpuAllocation<T>, Box<dyn Error>> {
     MEMORY.lock().unwrap().allocate_gpu_memory(count)
 }

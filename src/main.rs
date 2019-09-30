@@ -5,14 +5,14 @@ use crate::input::Input;
 use crate::vc::framebuffer::Framebuffer;
 use crate::vc::mailbox::{constants::*, mailbox_call};
 use crate::vc::memory::{allocate_gpu_memory, GpuAllocation};
-use static_assertions::const_assert;
 use crate::vc::v3d::{command_builder::*, V3d};
+use rand::random;
+use static_assertions::const_assert;
 use std::error::Error;
 use std::fs;
+use std::mem;
 use std::thread;
 use std::time;
-use rand::random;
-use std::mem;
 
 #[cfg(unix)]
 mod signal_panic {
@@ -206,7 +206,11 @@ impl RenderState {
             );
 
             cb.tile_coordinates(0, 0);
-            cb.store_tile_buffer_general(STORE_TILE_BUFFER_GENERAL_FLAGS16_STORE_COLOR, 0, fb.allocation().get_bus_address_l2_disabled());
+            cb.store_tile_buffer_general(
+                STORE_TILE_BUFFER_GENERAL_FLAGS16_STORE_COLOR,
+                0,
+                fb.allocation().get_bus_address_l2_disabled(),
+            );
 
             let column_count = (fb.width() + 63) / 64;
             let row_count = (fb.height() + 63) / 64;
@@ -257,7 +261,7 @@ impl RenderState {
                 0,
             );
 
-            cb.viewport_offset(0, 0);
+            cb.viewport_offset(random::<u8>() as i16, random::<u8>() as i16);
 
             cb.nv_shader_state(self.shader_program.get_bus_address_l2_disabled());
             cb.vertex_array_primitives(PRIMITIVE_MODE_TRIANGLES, 3, 0);
@@ -269,7 +273,6 @@ impl RenderState {
     }
 
     fn draw(&self, v3d: &mut V3d) {
-
         dbg!(v3d.errstat());
 
         dbg!(v3d.ct0cs());
@@ -287,7 +290,7 @@ impl RenderState {
 
         dbg!(v3d.ct0cs());
         dbg!(v3d.ct1cs());
-        
+
         v3d.set_ct0ca(self.binning_command_buffer.get_bus_address_l2_disabled());
         v3d.set_ct0ea(
             self.binning_command_buffer.get_bus_address_l2_disabled()
@@ -333,7 +336,7 @@ impl RenderState {
 
         println!("4");
 
-        //loop {}
+        thread::sleep(time::Duration::from_millis(1000));
 
         println!("5");
     }
