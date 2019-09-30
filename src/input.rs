@@ -23,7 +23,7 @@ struct Message {
 const_assert!(Message; mem::size_of::<Message>() == 12);
 
 impl Message {
-    fn from(buf: &[u8]) -> Result<Message, Box<Error>> {
+    fn from(buf: &[u8]) -> Result<Message, Box<dyn Error>> {
         let mut cursor = Cursor::new(buf);
         let mut message: Message = Default::default();
         message.magic = cursor.read_u32::<LittleEndian>()?;

@@ -172,50 +172,27 @@ impl RenderState {
         let bin_memory = allocate_gpu_memory::<u8>(1 * 1024 * 1024)?;
         let bin_base = allocate_gpu_memory::<u8>(48 * (4096 / 32) * (4096 / 32))?;
 
-        let (binning_command_buffer, binning_command_buffer_end) = {
-            let mut binning_command_buffer = allocate_gpu_memory::<u8>(1024 * 1024)?;
+        let binning_command_buffer = allocate_gpu_memory::<u8>(1024 * 1024)?;
+        let render_command_buffer = allocate_gpu_memory::<u8>(16 * 1024)?;
 
-            let mut cb = CommandBuilder::new(binning_command_buffer.as_mut_slice());
+        Ok(RenderState {
+            vertex_buffer,
+            fragment_shader_buffer,
+            shader_program,
+            bin_memory,
+            bin_base,
+            binning_command_buffer,
+            binning_command_buffer_end: 0,
+            render_command_buffer,
+            render_command_buffer_end: 0,
+        })
+    }
 
-            cb.tile_binning_mode_configuration(
-                bin_memory.get_bus_address_l2_disabled(),
-                bin_memory.len(),
-                bin_base.get_bus_address_l2_disabled(),
-                ((fb.width() + 63) / 64 + 1) as u8,
-                ((fb.height() + 63) / 64 + 1) as u8,
-                TILE_BINNING_FLAGS_AUTO_INITIALISE_TILE_STATE_DATA_ARRAY,
-            );
-
-            cb.start_tile_binning();
-            //cb.increment_semaphore();
-
-            cb.clip_window(0, 0, fb.width() as u16, fb.height() as u16);
-
-            cb.configuration_bits(
-                CONFIGURATION_BITS_FLAGS8_ENABLE_FORWARD_FACING_PRIMITIVE
-                    | CONFIGURATION_BITS_FLAGS8_ENABLE_REVERSE_FACING_PRIMITIVE,
-                0,
-            );
-
-            cb.viewport_offset(0, 0);
-
-            cb.nv_shader_state(shader_program.get_bus_address_l2_disabled());
-            cb.vertex_array_primitives(PRIMITIVE_MODE_TRIANGLES, 3, 0);
-
-            cb.flush();
-
-            let end = cb.end();
-
-            (binning_command_buffer, end)
-        };
-
-        let (render_command_buffer, render_command_buffer_end) = {
-            let mut render_command_buffer = allocate_gpu_memory::<u8>(16 * 1024)?;
-
-            let mut cb = CommandBuilder::new(render_command_buffer.as_mut_slice());
+    fn update_command_buffer(&mut self, fb: &Framebuffer) {
+        {
+            let mut cb = CommandBuilder::new(self.render_command_buffer.as_mut_slice());
 
             //cb.wait_on_semaphore();
-
 
             let color = (random::<u32>() | 0xff000000) as u64;
 
@@ -239,14 +216,14 @@ impl RenderState {
                     if x == column_count - 1 && y == row_count - 1 {
                         cb.tile_coordinates(x as i8, y as i8);
                         cb.branch_to_sub_list(
-                            bin_memory.get_bus_address_l2_disabled()
+                            self.bin_memory.get_bus_address_l2_disabled()
                                 + ((y * column_count + x) * 32),
                         );
                         cb.store_multi_sample_end();
                     } else {
                         cb.tile_coordinates(x as i8, y as i8);
                         cb.branch_to_sub_list(
-                            bin_memory.get_bus_address_l2_disabled()
+                            self.bin_memory.get_bus_address_l2_disabled()
                                 + ((y * column_count + x) * 32),
                         );
                         cb.store_multi_sample();
@@ -254,22 +231,41 @@ impl RenderState {
                 }
             }
 
-            let end = cb.end();
+            self.render_command_buffer_end = cb.end();
+        }
 
-            (render_command_buffer, end)
-        };
+        {
+            let mut cb = CommandBuilder::new(self.binning_command_buffer.as_mut_slice());
 
-        Ok(RenderState {
-            vertex_buffer,
-            fragment_shader_buffer,
-            shader_program,
-            bin_memory,
-            bin_base,
-            binning_command_buffer,
-            binning_command_buffer_end,
-            render_command_buffer,
-            render_command_buffer_end,
-        })
+            cb.tile_binning_mode_configuration(
+                self.bin_memory.get_bus_address_l2_disabled(),
+                self.bin_memory.len(),
+                self.bin_base.get_bus_address_l2_disabled(),
+                ((fb.width() + 63) / 64 + 1) as u8,
+                ((fb.height() + 63) / 64 + 1) as u8,
+                TILE_BINNING_FLAGS_AUTO_INITIALISE_TILE_STATE_DATA_ARRAY,
+            );
+
+            cb.start_tile_binning();
+            //cb.increment_semaphore();
+
+            cb.clip_window(0, 0, fb.width() as u16, fb.height() as u16);
+
+            cb.configuration_bits(
+                CONFIGURATION_BITS_FLAGS8_ENABLE_FORWARD_FACING_PRIMITIVE
+                    | CONFIGURATION_BITS_FLAGS8_ENABLE_REVERSE_FACING_PRIMITIVE,
+                0,
+            );
+
+            cb.viewport_offset(0, 0);
+
+            cb.nv_shader_state(self.shader_program.get_bus_address_l2_disabled());
+            cb.vertex_array_primitives(PRIMITIVE_MODE_TRIANGLES, 3, 0);
+
+            cb.flush();
+
+            self.binning_command_buffer_end = cb.end();
+        }
     }
 
     fn draw(&self, v3d: &mut V3d) {
@@ -337,7 +333,7 @@ impl RenderState {
 
         println!("4");
 
-        loop {}
+        //loop {}
 
         println!("5");
     }
@@ -355,9 +351,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut input = Input::new()?;
 
-    let mut x: i32 = 100;
-    let mut y: i32 = 100;
-
     let mut last = time::Instant::now();
     let mut measure_time = 0;
     let mut average_frame_time = 0.0;
@@ -365,24 +358,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     loop {
         input.poll();
 
-        if input.left_down {
-            x -= 1;
-        }
-
-        if input.right_down {
-            x += 1;
-        }
-
-        if input.up_down {
-            y -= 1;
-        }
-
-        if input.down_down {
-            y += 1;
-        }
-
-        //fb.clear();
-        //fb.draw(x as u32, y as u32);
+        render.update_command_buffer(&fb);
 
         render.draw(&mut v3d);
 
