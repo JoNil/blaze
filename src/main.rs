@@ -261,7 +261,7 @@ impl RenderState {
                 0,
             );
 
-            cb.viewport_offset(random::<u8>() as i16, random::<u8>() as i16);
+            cb.viewport_offset(0, 0);
 
             cb.nv_shader_state(self.shader_program.get_bus_address_l2_disabled());
             cb.vertex_array_primitives(PRIMITIVE_MODE_TRIANGLES, 3, 0);
