@@ -280,6 +280,7 @@ impl Memory {
         &self,
         count: u32,
     ) -> Result<GpuAllocation<T>, Box<dyn Error>> {
+        
         let size = count * mem::size_of::<T>() as u32;
 
         let gpu_memory = GpuMemory::new(size)?;

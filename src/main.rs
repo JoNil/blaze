@@ -203,9 +203,9 @@ impl RenderState {
 
             //cb.wait_on_semaphore();
 
-            let color = (random::<u32>() | 0xff000000) as u64;
+            let color = random::<u32>() | 0xff000000;
 
-            cb.clear_colors((color << 32) | color, 0, 0, 0);
+            cb.clear_colors(color, 0, 0, 0);
 
             cb.tile_rendering_mode_configuration(
                 fb.allocation().get_bus_address_l2_disabled(),
@@ -216,9 +216,9 @@ impl RenderState {
 
             cb.tile_coordinates(0, 0);
             cb.store_tile_buffer_general(
-                STORE_TILE_BUFFER_GENERAL_FLAGS16_STORE_COLOR,
                 0,
-                fb.allocation().get_bus_address_l2_disabled(),
+                0,
+                0,
             );
 
             let column_count = (fb.width() + 63) / 64;
@@ -232,6 +232,7 @@ impl RenderState {
                             self.bin_memory.get_bus_address_l2_disabled()
                                 + ((y * column_count + x) * 32),
                         );
+                        //cb.halt();
                         cb.store_multi_sample_end();
                     } else {
                         cb.tile_coordinates(x as i8, y as i8);
@@ -239,10 +240,13 @@ impl RenderState {
                             self.bin_memory.get_bus_address_l2_disabled()
                                 + ((y * column_count + x) * 32),
                         );
+                        //cb.halt();
                         cb.store_multi_sample();
                     }
                 }
             }
+
+            cb.halt();
 
             self.render_command_buffer_end = cb.end();
         }
@@ -276,6 +280,8 @@ impl RenderState {
             cb.vertex_array_primitives(PRIMITIVE_MODE_TRIANGLES, 3, 0);
 
             cb.flush();
+
+            cb.halt();
 
             self.binning_command_buffer_end = cb.end();
         }
@@ -318,6 +324,18 @@ impl RenderState {
 
         dbg!(v3d.bpcs());
 
+       dbg!("a");
+
+        {
+            for byte in self.bin_memory.as_slice() {
+                if *byte != 0 {
+                    println!("{}", *byte);
+                }
+            }
+        }
+
+        dbg!("b");
+
         v3d.set_ct0ca(self.binning_command_buffer.get_bus_address_l2_disabled());
         v3d.set_ct0ea(
             self.binning_command_buffer.get_bus_address_l2_disabled()
@@ -337,7 +355,15 @@ impl RenderState {
         dbg!(count);
         dbg!(v3d.bpcs());
 
-        println!("2");
+        dbg!("2");
+
+        {
+            for byte in self.bin_memory.as_slice() {
+                if *byte != 0 {
+                    println!("{}", *byte);
+                }
+            }
+        }
 
         dbg!(v3d.pcs());
 
@@ -347,7 +373,7 @@ impl RenderState {
                 + self.render_command_buffer_end,
         );
 
-        println!("3");
+        dbg!("3");
 
         let mut count = 0;
 
@@ -367,12 +393,12 @@ impl RenderState {
 
         dbg!(count);
 
-        println!("4");
+        dbg!("4");
         dbg!(v3d.bpcs());
 
         thread::sleep(time::Duration::from_millis(1000));
 
-        println!("5");
+        dbg!("5");
     }
 }
 

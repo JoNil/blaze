@@ -277,13 +277,13 @@ impl<'a> CommandBuilder<'a> {
 
     pub fn clear_colors(
         &mut self,
-        clearcolor: u64, // Clear Color (2X RGBA8888 Or RGBA16161616)
+        clearcolor: u32,
         clearvgmask: u8,
         clearzs: u32,
         clearstencil: u8,
     ) {
         self.cursor.write_u8(CMD_CLEAR_COLORS).unwrap();
-        self.cursor.write_u64::<LittleEndian>(clearcolor).unwrap();
+        self.cursor.write_u64::<LittleEndian>(((clearcolor as u64) << 32) | clearcolor as u64).unwrap();
         self.cursor
             .write_u32::<LittleEndian>((clearvgmask as u32 * 0x1000000) + clearzs)
             .unwrap();
@@ -300,7 +300,7 @@ impl<'a> CommandBuilder<'a> {
         self.cursor.write_u8(CMD_STORE_TILE_BUFFER_GENERAL).unwrap();
         self.cursor.write_u16::<LittleEndian>(flags16).unwrap();
         self.cursor
-            .write_u32::<LittleEndian>(flags32 | address)
+            .write_u32::<LittleEndian>(flags32 | (address >> 4))
             .unwrap();
     }
 }
